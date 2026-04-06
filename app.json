@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "app",
+    "slug": "travel-pinterest",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.sohamnarvankar.travelpinterest"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7c913bad-7571-49a6-8530-99af7de02c37"
+      }
+    },
+    "owner": "soham-narvankar",
+    "plugins": [
+      "expo-web-browser"
+    ]
+  }
+}
