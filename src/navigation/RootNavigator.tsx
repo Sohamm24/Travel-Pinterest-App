@@ -1,91 +1,96 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text } from 'react-native';
-
 import FeedScreen from '../screens/feed/FeedScreen';
-import PhotoDetailScreen from '../screens/feed/PhotoDetailScreen';
-import SavedScreen from '../screens/saved/SavedScreen';
-import BookingsScreen from '../screens/bookings/BookingsScreen';
-import UploadScreen from '../screens/upload/UploadScreen';
-import ProfileScreen from '../screens/profile/ProfileScreen';
+import ImageUploadScreen from '../screens/upload/ImageUploadScreen';
+import ThemeToggle from '../components/ThemeToggle';
+import { useTheme } from '../context/ThemeContext';
+import { spacing } from '../constants/spacing';
+import { typography } from '../constants/typography';
 
 export type RootStackParamList = {
   Feed: undefined;
-  PhotoDetail: { photoId: number };
-  Saved: undefined;
-  Bookings: undefined;
-  Upload: undefined;
-  Profile: undefined;
+  ImageUpload: undefined;
 };
 
-const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>;
-}
-
-function FeedStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Feed" component={FeedScreen} />
-      <Stack.Screen name="PhotoDetail" component={PhotoDetailScreen} />
-    </Stack.Navigator>
-  );
-}
-
-function SavedStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Saved" component={SavedScreen} />
-      <Stack.Screen name="PhotoDetail" component={PhotoDetailScreen} />
-    </Stack.Navigator>
-  );
-}
-
 export default function RootNavigator(): React.JSX.Element {
+  const { colors } = useTheme();
+
   return (
-    <Tab.Navigator
+    <Stack.Navigator
       screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#0f0f1a',
-          borderTopColor: '#1e1e30',
-          borderTopWidth: 1,
-          paddingBottom: 6,
-          height: 62,
+        headerStyle: { backgroundColor: colors.headerBg },
+        headerTintColor: colors.textPrimary,
+        headerTitleStyle: {
+          fontWeight: typography.extrabold,
+          fontSize: typography.xl,
+          color: colors.textPrimary,
         },
-        tabBarActiveTintColor: '#6C63FF',
-        tabBarInactiveTintColor: '#555',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.background },
+        animation: 'slide_from_right',
       }}
     >
-      <Tab.Screen
-        name="Explore"
-        component={FeedStack}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🔍" focused={focused} /> }}
+      <Stack.Screen
+        name="Feed"
+        component={FeedScreen}
+        options={({ navigation }) => ({
+          title: 'TravelPinterest',
+          headerRight: () => (
+            <View style={styles.headerRight}>
+              <ThemeToggle />
+              <TouchableOpacity
+                style={[
+                  styles.plusBtn,
+                  { backgroundColor: colors.primary },
+                ]}
+                onPress={() => navigation.navigate('ImageUpload')}
+                accessibilityLabel="Find matching destinations"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.plusIcon}>+</Text>
+              </TouchableOpacity>
+            </View>
+          ),
+        })}
       />
-      <Tab.Screen
-        name="Saved"
-        component={SavedStack}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="❤️" focused={focused} /> }}
+      <Stack.Screen
+        name="ImageUpload"
+        component={ImageUploadScreen}
+        options={{
+          title: 'Find Matching Destinations',
+          headerBackTitle: 'Back',
+          headerTitleStyle: {
+            fontWeight: typography.bold,
+            fontSize: typography.md,
+            color: colors.textPrimary,
+          },
+        }}
       />
-      <Tab.Screen
-        name="Upload"
-        component={UploadScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📸" focused={focused} /> }}
-      />
-      <Tab.Screen
-        name="Bookings"
-        component={BookingsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🗓" focused={focused} /> }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} /> }}
-      />
-    </Tab.Navigator>
+    </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  plusBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  plusIcon: {
+    color: '#000',
+    fontSize: 22,
+    fontWeight: '700',
+    lineHeight: 26,
+    marginTop: -1,
+  },
+});

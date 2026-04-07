@@ -1,49 +1,73 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import type { FeedResponse, MatchResponse } from '../types/api';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
-const api = axios.create({
-  baseURL: API_URL,
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+const client = axios.create({
+  baseURL: API_BASE,
+  timeout: 30000,
 });
 
-// Attach auth token to every request
-api.interceptors.request.use(
-  async (config) => {
-    const token = await SecureStore.getItemAsync('clerk_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+/** Prefix relative image URLs with the API base URL. */
+export function resolveImageUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
+export const api = {
+  async getFeed(
+    limit: number = 20,
+    offset: number = 0,
+    seenIds: string[] = [],
+    history: object[] = [],
+  ): Promise<FeedResponse> {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (seenIds.length > 0) params.append('seen_ids', seenIds.join(','));
+    if (history.length > 0) params.append('history', JSON.stringify(history));
+
+    const { data } = await client.get<FeedResponse>(`/api/feed?${params}`);
+
+    // Resolve all image URLs to absolute
+    data.images = data.images.map((img) => ({
+      ...img,
+      image_url: resolveImageUrl(img.image_url),
+    }));
+
+    return data;
   },
-  (error) => Promise.reject(error)
-);
 
-// Handle 401 globally
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      await SecureStore.deleteItemAsync('clerk_token');
-    }
-    return Promise.reject(error);
-  }
-);
+  async matchImage(
+    uri: string,
+    topN: number = 10,
+    onProgress?: (pct: number) => void,
+  ): Promise<MatchResponse> {
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      type: 'image/jpeg',
+      name: 'upload.jpg',
+    } as any);
+    formData.append('top_n', String(topN));
 
-export default api;
+    const { data } = await client.post<MatchResponse>('/api/match', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) {
+          onProgress(Math.round((e.loaded * 100) / e.total));
+        }
+      },
+    });
 
-export const setAuthToken = async (token: string): Promise<void> => {
-  await SecureStore.setItemAsync('clerk_token', token);
-};
+    // Resolve match image URLs
+    data.matches = data.matches.map((m) => ({
+      ...m,
+      image_url: resolveImageUrl(m.image_url),
+    }));
 
-export const getAuthToken = async (): Promise<string | null> => {
-  return SecureStore.getItemAsync('clerk_token');
-};
-
-export const clearAuthToken = async (): Promise<void> => {
-  await SecureStore.deleteItemAsync('clerk_token');
+    return data;
+  },
 };

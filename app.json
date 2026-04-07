@@ -1,30 +1,39 @@
 {
   "expo": {
-    "name": "app",
+    "name": "TravelPinterest",
     "slug": "travel-pinterest",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "TravelPinterest uses your camera to find matching travel destinations.",
+        "NSPhotoLibraryUsageDescription": "TravelPinterest accesses your photos to find matching travel destinations."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.sohamnarvankar.travelpinterest"
+      "package": "com.sohamnarvankar.travelpinterest",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logo.png"
     },
     "extra": {
       "eas": {
@@ -33,7 +42,13 @@
     },
     "owner": "soham-narvankar",
     "plugins": [
-      "expo-web-browser"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TravelPinterest your photos to find matching travel destinations.",
+          "cameraPermission": "TravelPinterest uses your camera to find matching travel destinations."
+        }
+      ]
     ]
   }
 }
