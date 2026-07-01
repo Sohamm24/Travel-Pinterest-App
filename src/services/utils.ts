@@ -6,7 +6,8 @@ export function formatFileSize(bytes: number): string {
 }
 
 /** Capitalise the first letter of each word. */
-export function titleCase(str: string): string {
+export function titleCase(str?: string | null): string {
+  if (!str) return '';
   return str
     .replace(/_/g, ' ')
     .split(' ')

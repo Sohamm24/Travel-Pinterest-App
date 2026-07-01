@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect } from '@react-navigation/native';
-import { Camera, Image as ImageIcon, Search, ArrowLeft } from 'lucide-react-native';
+import { Camera, Image as ImageIcon, ArrowLeft } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { typography } from '../constants/typography';
 import { spacing } from '../constants/spacing';
@@ -153,11 +153,11 @@ export default function ImageUploadForm({
           ]}
           onPress={onUpload}
           disabled={uploading}
-          accessibilityLabel="Find matching destinations"
+          accessibilityLabel="Upload photo"
         >
-          <Search size={18} color="#000" strokeWidth={2.5} />
+          <Camera size={18} color="#000" strokeWidth={2.5} />
           <Text style={styles.uploadBtnText}>
-            {uploading ? 'Matching…' : 'Find Matches'}
+            {uploading ? 'Uploading…' : 'Upload Photo'}
           </Text>
         </TouchableOpacity>
 

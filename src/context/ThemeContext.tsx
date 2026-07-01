@@ -16,15 +16,15 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'dark',
-  colors: darkColors,
+  theme: 'light',
+  colors: lightColors,
   toggleTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
   const [theme, setTheme] = useState<'light' | 'dark'>(
-    systemScheme === 'light' ? 'light' : 'dark',
+    systemScheme === 'dark' ? 'dark' : 'light',
   );
 
   // Load persisted preference on mount

@@ -74,12 +74,12 @@ export default {
           }
         }
       ],
-      "expo-secure-store",
       "expo-web-browser"
     ],
     extra: {
-      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY:
-        process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
+      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
+      EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
+      EXPO_PUBLIC_GEOAPIFY_KEY: process.env.EXPO_PUBLIC_GEOAPIFY_KEY,
       eas: {
         projectId: "7c913bad-7571-49a6-8530-99af7de02c37"
       }
