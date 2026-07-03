@@ -64,19 +64,13 @@ export interface FAQItem {
   answer: string;
 }
 
-export interface ItineraryActivity {
-  sequence: number;
+export interface Itinerary {
   title: string;
-  description?: string;
-  location?: string;
-  start_time?: string;
-  end_time?: string;
+  media: string;
+  time: string;
+  location: LocationModel;
 }
 
-export interface ItineraryDay {
-  day_number: number;
-  activities: ItineraryActivity[];
-}
 
 export interface TripResponse {
   trip_id: string;
@@ -84,9 +78,9 @@ export interface TripResponse {
   last_completed_step: number;
   title?: string;
   thumbnail?: string;
-  itinerary?: any[];
+  itinerary: Itinerary[];
   inclusions?: Record<string, boolean>;
-  max_travellers?: number;
+  max_travellers: number;
   budget?: number;
   confirmation_amount?: number;
   confirmation_deadline?: string;
@@ -103,7 +97,6 @@ export interface TripListResponse {
 }
 
 export interface TripDetailResponse extends TripResponse {
-  itinerary?: ItineraryDay[];
   discussion_id?: string;
   is_interested: boolean;
 }
@@ -119,7 +112,6 @@ export interface TripCreatePayload {
   max_travellers?: number;
   description?: string;
   frequently_asked?: FAQItem[];
-  itinerary?: ItineraryDay[];
 }
 
 export interface TripUpdatePayload {
@@ -137,7 +129,6 @@ export interface TripUpdatePayload {
 export interface ItineraryResponse {
   itinerary_id?: string;
   trip_id: string;
-  itinerary: ItineraryDay[];
 }
 
 export interface OrganizerResponse {

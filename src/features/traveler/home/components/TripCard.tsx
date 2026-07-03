@@ -13,16 +13,6 @@ import { TYPOGRAPHY, SHAPES, SPACING } from '../../../../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-function formatDateRange(start?: string, end?: string) {
-  if (!start) return 'Date TBD';
-  const s = new Date(start);
-  const sStr = s.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-  if (!end) return sStr;
-  const e = new Date(end);
-  const eStr = e.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-  return `${sStr}-${eStr}`;
-}
-
 interface TripCardProps {
   item: any;
   onPress: () => void;
@@ -30,6 +20,17 @@ interface TripCardProps {
 
 export default function TripCard({ item, onPress }: TripCardProps) {
   const { colors } = useTheme();
+
+  const firstItineraryDate = item.itinerary?.length > 0 ? new Date(item.itinerary[0].time) : null;
+  const lastItineraryDate = item.itinerary?.length > 0 ? new Date(item.itinerary[item.itinerary.length - 1].time) : null;
+
+  const dates = {
+    startMonth: firstItineraryDate?.toLocaleString('default', { month: 'short' }) ?? '',
+    startDay: firstItineraryDate?.getDate().toString() ?? '',
+    endMonth: lastItineraryDate?.toLocaleString('default', { month: 'short' }) ?? '',
+    endDay: lastItineraryDate?.getDate().toString() ?? '',
+  };
+
 
   return (
     <TouchableOpacity
@@ -44,7 +45,7 @@ export default function TripCard({ item, onPress }: TripCardProps) {
         <View style={styles.infoRow}>
           <Calendar color={colors.iconDisabled} size={14} />
           <Text style={[styles.infoText, { color: colors.iconDisabled }]}>
-            {formatDateRange(item.start_date, item.end_date)}
+            {dates.startDay} {dates.startMonth} - {dates.endDay} {dates.endMonth}
           </Text>
         </View>
         <View style={styles.infoRow}>
@@ -61,8 +62,8 @@ export default function TripCard({ item, onPress }: TripCardProps) {
       </View>
 
       <View style={styles.cardRight}>
-        {item.cover_image ? (
-          <Image source={{ uri: item.cover_image }} style={styles.coverImage} />
+        {item.thumbnail ? (
+          <Image source={{ uri: item.thumbnail }} style={styles.coverImage} />
         ) : (
           <View style={[styles.coverImage, { backgroundColor: colors.ternary }]} />
         )}
@@ -86,6 +87,7 @@ export default function TripCard({ item, onPress }: TripCardProps) {
 
 const styles = StyleSheet.create({
   card: {
+    flex: 1, 
     flexDirection: 'row',
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.md,
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs + 2,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.23)',
   },
   organizerAvatar: {
     width: 24,

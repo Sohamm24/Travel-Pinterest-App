@@ -28,12 +28,11 @@ export default function TripCards({ trip, onPress }: { trip: OrganizerTrip; onPr
   const { colors } = useTheme();
   const start = formatDate(trip.start_date);
   const end = formatDate(trip.end_date);
-
   return (
     <TouchableOpacity style={[styles.tripCard, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.tripCardTop}>
-        {trip.cover_image ? (
-          <Image source={{ uri: trip.cover_image }} style={styles.tripImage} />
+        {trip.thumbnail ? (
+          <Image source={{ uri: trip.thumbnail }} style={styles.tripImage} />
         ) : (
           <View style={[styles.tripImage, styles.tripImagePlaceholder, { backgroundColor: colors.dim }]}>
             <Route color={colors.ternary} size={24} />

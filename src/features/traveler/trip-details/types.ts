@@ -1,3 +1,22 @@
+export interface LocationModel {
+  name?: string;
+  lat?: number;
+  lng?: number;
+}
+
+export interface Itinerary {
+  title: string;
+  media: string;
+  time: string;
+  location: LocationModel;
+}
+
+export interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+
 export interface TripDetail {
   trip_id: string;
   title: string;
@@ -22,26 +41,7 @@ export interface TripDetail {
     total_reviews?: number;
     trip_count?: number;
   };
-  itinerary?: ItineraryDay[];
+  itinerary?: Itinerary[];
   frequently_asked?: FAQItem[];
 }
 
-export interface ItineraryDay {
-  day_number: number;
-  activities: ItineraryActivity[];
-}
-
-export interface ItineraryActivity {
-  sequence: number;
-  title: string;
-  description?: string;
-  location?: string;
-  start_time?: string;
-  end_time?: string;
-  image?: string;
-}
-
-export interface FAQItem {
-  question: string;
-  answer: string;
-}

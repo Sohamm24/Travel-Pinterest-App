@@ -18,18 +18,60 @@ import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY } from '../../../../constants/theme';
 import { uploadMedia } from './Upload-media';
 
+// ── Types ──────────────────────────────────────────────────────────────────
+
+/**
+ * Shape stored locally in formData.itinerary[].
+ * Keeps UI-friendly date/time strings separate so the pickers work normally.
+ * The backend payload is assembled in buildApiPayload() below.
+ */
 interface ItineraryItem {
   id: string;
   title: string;
-  location: string;
-  date: string;
-  time: string;
-  image: string | null;       // display URI (local or CDN)
-  imagePath: string | null;   // confirmed bucket path
+  location: string;       // plain string for the text field
+  date: string;           // "DD Mon YYYY" – UI only
+  time: string;           // "HH:MM"       – UI only
+  image: string | null;   // local preview URI or CDN URL
+  imagePath: string | null; // confirmed bucket path → sent as `media`
   imageUploading?: boolean;
 }
 
-// ── Date / Time pickers (unchanged from your original) ─────────────────────
+/**
+ * Matches backend ItineraryActivity / LocationModel.
+ * Sent to PATCH /{trip_id}/step2 inside { itinerary: [...] }.
+ */
+interface ItineraryActivityPayload {
+  title: string;
+  location: { name: string };   // LocationModel
+  time: string;                 // ISO-8601 datetime string
+  media: string;                // bucket path (imagePath)
+}
+
+/**
+ * Converts the UI-friendly list into the shape the backend expects.
+ * Call this right before the API request.
+ */
+export function buildStep2Payload(items: ItineraryItem[]): { itinerary: ItineraryActivityPayload[] } {
+  return {
+    itinerary: items.map((item) => ({
+      title: item.title,
+      location: { name: item.location },
+      time: toIsoDateTime(item.date, item.time),
+      media: item.imagePath ?? '',
+    })),
+  };
+}
+
+/** "DD Mon YYYY" + "HH:MM"  →  ISO-8601 string, e.g. "2025-12-25T06:00:00.000Z" */
+function toIsoDateTime(dateStr: string, timeStr: string): string {
+  // dateStr: "25 Dec 2025", timeStr: "06:00"
+  if (!dateStr || !timeStr) return new Date().toISOString();
+  const combined = `${dateStr} ${timeStr}`; // "25 Dec 2025 06:00"
+  const parsed = new Date(combined);
+  return isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+}
+
+// ── Date / Time pickers ────────────────────────────────────────────────────
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const HOURS   = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -275,7 +317,15 @@ function ItineraryCard({ item, onRemove, colors }: { item: ItineraryItem; onRemo
 
 // ── Main Step 2 component ──────────────────────────────────────────────────
 
-const EMPTY_DRAFT = { title: '', location: '', date: '', time: '', image: null as string | null, imagePath: null as string | null, imageUploading: false };
+const EMPTY_DRAFT = {
+  title: '',
+  location: '',
+  date: '',
+  time: '',
+  image: null as string | null,
+  imagePath: null as string | null,
+  imageUploading: false,
+};
 
 export default function Step2Itinerary({ formData, setFormData, tripId }: any) {
   const { colors } = useTheme();
@@ -310,7 +360,6 @@ export default function Step2Itinerary({ formData, setFormData, tripId }: any) {
         { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
       );
 
-      // We use a temp slot id so the server can match it later
       const slotId = Date.now().toString();
 
       const { filePath, publicUrl } = await uploadMedia({
@@ -324,7 +373,7 @@ export default function Step2Itinerary({ formData, setFormData, tripId }: any) {
       setDraft((prev) => ({
         ...prev,
         image: publicUrl,
-        imagePath: filePath,
+        imagePath: filePath,   // ← this becomes `media` in the API payload
         imageUploading: false,
         _slotId: slotId,
       } as any));

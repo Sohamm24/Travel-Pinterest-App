@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   FlatList,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Route } from 'lucide-react-native';
@@ -15,6 +16,7 @@ import { TYPOGRAPHY, SHAPES, SPACING } from '../../../constants/theme';
 import { useMyOrganizerTrips } from './hooks';
 import TripCards from './components/TripCards';
 import type { OrganizerTrip } from './types';
+import { tripsDashboardApi } from './api';
 
 
 function EmptyState({ onCreateTrip, colors }: { onCreateTrip: () => void; colors: any }) {
@@ -72,8 +74,26 @@ export default function TripDashboard() {
   const { colors } = useTheme();
   const { data: trips, isLoading } = useMyOrganizerTrips();
 
-  const handleCreateTrip = () => navigation.navigate('CreateTrip');
-  const handleTripPress = (trip: OrganizerTrip) => navigation.navigate('TripDetails', { tripId: trip.id.toString() });
+  const handleCreateTrip = async () => {
+    try {
+      const { trip_id } = await tripsDashboardApi.createEmptyDraft();
+      navigation.navigate('CreateTrip', { tripId: trip_id });
+    } catch (err) {
+      Alert.alert('Error', 'Could not start a new trip. Please try again.');
+    }
+  };
+  
+  const handleTripPress = (trip: OrganizerTrip) => {
+    if (trip.status.toLowerCase() === "draft") {
+      navigation.navigate('CreateTrip', {
+        tripId: trip.trip_id.toString(),
+      });
+    } else {
+      navigation.navigate('TripDetails', {
+        tripId: trip.trip_id.toString(),
+      });
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

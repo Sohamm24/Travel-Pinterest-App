@@ -3,25 +3,29 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY } from '../../../../constants/theme';
 
-const INCLUSION_OPTIONS = [
-  'Breakfast',
-  'Lunch',
-  'Dinner',
-  'Accommodation',
-  'Driver Charges',
-  'Guide',
-  'Toll, Permit & Entry fees',
+const INCLUSION_OPTIONS: { label: string; key: string }[] = [
+  { label: 'Breakfast',              key: 'breakfast' },
+  { label: 'Lunch',                  key: 'lunch' },
+  { label: 'Dinner',                 key: 'dinner' },
+  { label: 'Accommodation',          key: 'accommodation' },
+  { label: 'Driver Charges',         key: 'vehicle_charges' },
+  { label: 'Guide',                  key: 'guide' },
+  { label: 'Toll, Permit & Entry fees', key: 'toll_permit_entry_fees' },
 ];
+
+const DEFAULT_INCLUSIONS = Object.fromEntries(
+  INCLUSION_OPTIONS.map(({ key }) => [key, false])
+);
 
 export default function Step3Inclusions({ formData, setFormData }: any) {
   const { colors } = useTheme();
-  const selected: string[] = formData.inclusions ?? [];
+  const inclusions = formData.inclusions ?? DEFAULT_INCLUSIONS;
 
-  const toggle = (option: string) => {
-    const next = selected.includes(option)
-      ? selected.filter((s) => s !== option)
-      : [...selected, option];
-    setFormData({ ...formData, inclusions: next });
+  const toggle = (key: string) => {
+    setFormData({
+      ...formData,
+      inclusions: { ...inclusions, [key]: !inclusions[key] },
+    });
   };
 
   return (
@@ -31,13 +35,13 @@ export default function Step3Inclusions({ formData, setFormData }: any) {
       </Text>
 
       <View style={styles.list}>
-        {INCLUSION_OPTIONS.map((option) => {
-          const checked = selected.includes(option);
+        {INCLUSION_OPTIONS.map(({ label, key }) => {
+          const checked = !!inclusions[key];
           return (
             <TouchableOpacity
-              key={option}
+              key={key}
               style={styles.row}
-              onPress={() => toggle(option)}
+              onPress={() => toggle(key)}
               activeOpacity={0.7}
             >
               <View
@@ -48,7 +52,7 @@ export default function Step3Inclusions({ formData, setFormData }: any) {
                     : [styles.checkboxUnchecked, { borderColor: colors.border }],
                 ]}
               />
-              <Text style={[styles.optionText, { color: colors.textPrimary }]}>{option}</Text>
+              <Text style={[styles.optionText, { color: colors.textPrimary }]}>{label}</Text>
             </TouchableOpacity>
           );
         })}

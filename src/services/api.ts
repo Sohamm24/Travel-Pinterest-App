@@ -44,17 +44,17 @@ export const api = {
     mime_type: 'image/jpeg' | 'image/png' | 'image/webp';
     itinerary_slot?: string | null;
   }): Promise<{ presigned_url: string; file_path: string }> {
-    const res = await client.post('/api/v1/media/presign', data);
-    return res.data.data;
+    const res = await client.post('/api/v1/upload/presign', data);
+    return res.data;
   },
-  
+
   async confirmMediaUpload(data: {
     trip_id: string;
     file_path: string;
     media_context: 'thumbnail' | 'itinerary';
     itinerary_slot?: string | null;
   }): Promise<{ public_url: string }> {
-    const res = await client.post('/api/v1/uploads/confirm', data);
+    const res = await client.post('/api/v1/upload/confirm', data);
     return res.data.data;
   },
 
@@ -104,44 +104,46 @@ export const api = {
   },
 
   // ── Trips ──────────────────────────────────────────────────────────────────
-  async draftTrip(payload: Step1Payload): Promise<TripResponse> {
-    const { data } = await client.post<TripResponse>('/api/v1/trips/draft', payload);
+  async createDraft(): Promise<TripResponse> {
+    const { data } = await client.post<TripResponse>('/api/v1/trips/draft');
     return data;
   },
-  async updateTripStep1(tripId: string,payload: Step1Payload): Promise<TripResponse> {
-    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step1`,payload);
+  async updateTripStep1(tripId: string, payload: Step1Payload): Promise<TripResponse> {
+    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step1`, payload);
     return data;
   },
-  async updateTripStep2(tripId: string,payload: ItineraryStepPayload): Promise<TripResponse> {
-    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step2`,payload);
+  async updateTripStep2(tripId: string, payload: ItineraryStepPayload): Promise<TripResponse> {
+    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step2`, payload);
     return data;
   },
-  async updateTripStep3(tripId: string,payload: InclusionsStepPayload): Promise<TripResponse> {
-    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step3`,payload);
+  async updateTripStep3(tripId: string, payload: InclusionsStepPayload): Promise<TripResponse> {
+    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step3`, payload);
     return data;
   },
-  async updateTripStep4(tripId: string,payload: PricingStepPayload): Promise<TripResponse> {
-    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step4`,payload);
+  async updateTripStep4(tripId: string, payload: PricingStepPayload): Promise<TripResponse> {
+    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step4`, payload);
     return data;
   },
-  async updateTripStep5(tripId: string,payload: AudienceStepPayload): Promise<TripResponse> {
-    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step5`,payload);
+  async updateTripStep5(tripId: string, payload: AudienceStepPayload): Promise<TripResponse> {
+    console.log(JSON.stringify(payload, null, 2));
+    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step5`, payload);
     return data;
   },
-  async updateTripStep6(tripId: string,payload: DescriptionStepPayload): Promise<TripResponse> {
-    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step6`,payload);
+  async updateTripStep6(tripId: string, payload: DescriptionStepPayload): Promise<TripResponse> {
+    const { data } = await client.patch<TripResponse>(`/api/v1/trips/${tripId}/step6`, payload);
     return data;
   },
   async publishTrip(tripId: string): Promise<TripResponse> {
-    const { data } = await client.post<TripResponse>(`/api/v1/trips/${tripId}/publish`,{});
+    const { data } = await client.post<TripResponse>(`/api/v1/trips/${tripId}/publish`, {});
     return data;
   },
   async getTrip(tripId: string): Promise<TripResponse> {
     const { data } = await client.get<TripResponse>(`/api/v1/trips/${tripId}`);
+    console.log(data.itinerary)
     return data;
   },
   async getMyDraftTrips(): Promise<TripResponse[]> {
-    const { data } = await client.get<TripResponse[]>('/api/v1/trips',{
+    const { data } = await client.get<TripResponse[]>('/api/v1/trips', {
       params: { trip_status: 'draft' },
     });
     return data;
@@ -157,13 +159,10 @@ export const api = {
   async deleteTrip(tripId: string): Promise<void> {
     await client.delete(`/api/v1/trips/${tripId}`);
   },
-  async getOrganizerTrips(organizerId?: string, params?: any): Promise<TripListResponse> {
-    const { data } = await client.get<TripListResponse>('/api/v1/trips/', {
-      params: { organizer_id: organizerId, ...params },
-    });
+  async getOrganizerTrips(organizerId: string, page = 1): Promise<TripListResponse> {
+    const { data } = await client.get<TripListResponse>(`/api/v1/trips/organizers/${organizerId}`, { params: { page } });
     return data;
-  },
-
+},
   // ── Interest ───────────────────────────────────────────────────────────────
   async markInterested(tripId: string): Promise<any> {
     const { data } = await client.post(`/api/v1/trips/${tripId}/interested`);

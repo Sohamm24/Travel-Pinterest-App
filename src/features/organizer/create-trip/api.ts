@@ -10,7 +10,6 @@ import type {
 } from './types';
 
 export const tripApi = {
-  createDraft: (data: Step1Payload) => api.draftTrip(data),
 
   updateBasicInfo: (
     tripId: string,

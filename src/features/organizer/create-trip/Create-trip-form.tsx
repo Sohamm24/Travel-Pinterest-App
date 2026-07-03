@@ -16,7 +16,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '../../../context/ThemeContext';
 import { TYPOGRAPHY } from '../../../constants/theme';
 import {
-  useCreateDraftTrip,
   useUpdateBasicInfo,
   useUpdateItinerary,
   useUpdateInclusions,
@@ -28,7 +27,7 @@ import {
 } from './hooks';
 import type { StepKey } from './types';
 import Step1BasicInfo from './components/Step-1';
-import Step2Itinerary from './components/Step-2';
+import Step2Itinerary, { buildStep2Payload } from './components/Step-2';
 import Step3Inclusions from './components/Step-3';
 import Step4Pricing from './components/Step-4';
 import Step5Audience from './components/Step-5';
@@ -62,8 +61,34 @@ const INITIAL_FORM = {
   frequently_asked: [] as { question: string; answer: string }[],
 };
 
+const MONTHS: Record<string, number> = {
+  Jan: 0,
+  Feb: 1,
+  Mar: 2,
+  Apr: 3,
+  May: 4,
+  Jun: 5,
+  Jul: 6,
+  Aug: 7,
+  Sep: 8,
+  Oct: 9,
+  Nov: 10,
+  Dec: 11,
+};
+
 function combineDateTime(date: string, time: string): string {
-  return new Date(`${date}T${time}`).toISOString();
+  const [day, month, year] = date.split(' ');
+  const [hours, minutes] = time.split(':');
+
+  const d = new Date(
+    Number(year),
+    MONTHS[month],
+    Number(day),
+    Number(hours),
+    Number(minutes)
+  );
+
+  return d.toISOString();
 }
 
 function StepHeader({ stepIndex, colors }: { stepIndex: number; colors: any }) {
@@ -91,10 +116,9 @@ export default function CreateTripForm() {
   const [formData, setFormData] = useState<any>(INITIAL_FORM);
   const [tripId, setTripId] = useState<string | null>(existingTripId);
   const [hydrated, setHydrated] = useState(!existingTripId);
-
+  console.log(existingTripId)
   const { data: existingTrip, isLoading: loadingDraft } = useGetTrip(existingTripId);
 
-  const createDraft = useCreateDraftTrip();
   const updateBasicInfo = useUpdateBasicInfo();
   const updateItinerary = useUpdateItinerary();
   const updateInclusions = useUpdateInclusions();
@@ -133,7 +157,6 @@ export default function CreateTripForm() {
   const isPreview = currentStep === 'preview';
 
   const submitting =
-    createDraft.isPending ||
     updateBasicInfo.isPending ||
     updateItinerary.isPending ||
     updateInclusions.isPending ||
@@ -145,24 +168,18 @@ export default function CreateTripForm() {
   const persistCurrentStep = async (): Promise<string | null> => {
     switch (currentStep) {
       case 'info': {
+        console.log(existingTripId)
+        console.log(tripId)
         if (!formData.title.trim()) return null;
-        if (tripId) {
-          await updateBasicInfo.mutateAsync({
-            tripId,
-            payload: { title: formData.title.trim(), thumbnail: formData.thumbnail },
-          });
-          return tripId;
-        }
-        const res = await createDraft.mutateAsync({
-          title: formData.title.trim(),
-          thumbnail: formData.thumbnail,
+        await updateBasicInfo.mutateAsync({
+          tripId,
+          payload: { title: formData.title.trim(), thumbnail: formData.thumbnail },
         });
-        setTripId(res.trip_id);
-        return res.trip_id;
+        return tripId;
       }
       case 'itinerary': {
         if (!tripId) return tripId;
-        await updateItinerary.mutateAsync({ tripId, payload: { itinerary: formData.itinerary } });
+        await updateItinerary.mutateAsync({ tripId, payload: buildStep2Payload(formData.itinerary) });
         return tripId;
       }
       case 'inclusions': {
@@ -220,6 +237,7 @@ export default function CreateTripForm() {
       await persistCurrentStep();
       setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
     } catch (err: any) {
+      console.log(err)
       Alert.alert('Error', err?.response?.data?.detail || 'Could not save this step. Please try again.');
     }
   };

@@ -187,7 +187,6 @@ function PricingField({ label, value, onChangeText, placeholder, prefix, keyboar
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Step4Pricing({ formData, setFormData }: any) {
   const { colors } = useTheme();
-
   return (
     <View style={s.container}>
       <PricingField

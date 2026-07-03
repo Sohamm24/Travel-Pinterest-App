@@ -30,6 +30,7 @@ export async function uploadMedia(opts: UploadOptions): Promise<UploadResult> {
     mime_type: mimeType,
     itinerary_slot: itinerarySlot ?? null,
   });
+  console.log(presignRes)
 
   const { presigned_url, file_path } = presignRes;
 
@@ -37,7 +38,7 @@ export async function uploadMedia(opts: UploadOptions): Promise<UploadResult> {
   const filePath = file_path;
   
 
-  // ── Step 2: PUT directly to Supabase (no server in the middle) ──────────
+  // PUT directly to Supabase (no server in the middle) ──────────
   const fileBlob = await uriToBlob(localUri);
 
   const putRes = await fetch(signed_url, {

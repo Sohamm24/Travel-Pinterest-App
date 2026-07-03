@@ -26,7 +26,6 @@ import EditOrganizerProfileScreen from '../features/organizer/organizer-profile/
 import EarningsScreen from '../features/organizer/organizer-profile/components/Earnings';
 import OrganizerSupportScreen from '../features/organizer/organizer-profile/components/Organizer-support';
 import OrganizerVerificationScreen from '../features/organizer/organizer-verification/Organizer-verification-form';
-import ViewItineraryScreen from '../features/traveler/trip-details/components/View-itinerary';
 import ConfirmTripScreen from '../features/traveler/trip-details/components/Confirm-trip';
 
 export type RootStackParamList = {
@@ -117,7 +116,6 @@ export default function RootNavigator(): React.JSX.Element {
           <RootStack.Screen name="Earnings" component={EarningsScreen} />
           <RootStack.Screen name="OrganizerSupport" component={OrganizerSupportScreen} />
           <RootStack.Screen name="OrganizerVerification" component={OrganizerVerificationScreen} />
-          <RootStack.Screen name="ViewItinerary" component={ViewItineraryScreen} />
           <RootStack.Screen name="ConfirmTrip" component={ConfirmTripScreen} />
         </>
       )}

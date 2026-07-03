@@ -7,7 +7,7 @@ export function useMyOrganizerTrips() {
 
   return useQuery({
     queryKey: ['my_organizer_trips', organizerId],
-    queryFn: () => tripsDashboardApi.getOrganizerTrips(organizerId ?? undefined),
+    queryFn: () => tripsDashboardApi.getOrganizerTrips(organizerId ?? ''),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled: !!organizerId,

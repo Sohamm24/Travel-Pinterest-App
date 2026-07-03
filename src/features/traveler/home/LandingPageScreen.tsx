@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../../context/ThemeContext';
-import { TYPOGRAPHY, SHAPES, SPACING } from '../../../constants/theme';
+import { TYPOGRAPHY, SHAPES, SPACING, COLORS } from '../../../constants/theme';
 import {
   Search,
   ChevronDown,
@@ -93,7 +93,7 @@ function HeroBanner({ colors }: { colors: any }) {
       >
         {HERO_SLIDES.map((slide, i) => (
           <View key={i} style={[heroStyles.slide, { width: SCREEN_WIDTH }]}>
-            <Text style={[heroStyles.headline, { color: colors.bannerText }]}>{slide.headline}</Text>
+            <Text style={[heroStyles.headline, { color: COLORS.bannerText }]}>{slide.headline}</Text>
             <View style={heroStyles.featuresRow}>
               {slide.features.map((f, fi) => (
                 <React.Fragment key={fi}>

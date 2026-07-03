@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { draftTripApi } from './api';
+import { tripApi } from './api';
 import type {
   Step1Payload,
   ItineraryStepPayload,
@@ -10,47 +10,47 @@ import type {
   TripResponse,
 } from './types';
 
-export function useCreateDraftTrip() {
-  return useMutation<TripResponse, any, Step1Payload>({
-    mutationFn: async (payload) => {
-      const data = await draftTripApi.draftTrip(payload);
-      return data;
-    },
-  });
-}
 
-function useStepPatch<T>(stepPath: string) {
-  return useMutation<TripResponse, any, { tripId: string; payload: T }>({
-    mutationFn: async ({ tripId, payload }) => {
-      const { data } = await api.patch(`/trips/${tripId}/${stepPath}`, payload);
-      return data;
-    },
+export const useUpdateBasicInfo = () =>
+  useMutation<TripResponse, any, { tripId: string; payload: Step1Payload }>({
+    mutationFn: ({ tripId, payload }) => tripApi.updateBasicInfo(tripId, payload),
   });
-}
 
-export const useUpdateBasicInfo = () => useStepPatch<Step1Payload>('step1');
-export const useUpdateItinerary = () => useStepPatch<ItineraryStepPayload>('step2');
-export const useUpdateInclusions = () => useStepPatch<InclusionsStepPayload>('step3');
-export const useUpdatePricing = () => useStepPatch<PricingStepPayload>('step4');
-export const useUpdateAudience = () => useStepPatch<AudienceStepPayload>('step5');
-export const useUpdateDescription = () => useStepPatch<DescriptionStepPayload>('step6');
+export const useUpdateItinerary = () =>
+  useMutation<TripResponse, any, { tripId: string; payload: ItineraryStepPayload }>({
+    mutationFn: ({ tripId, payload }) => tripApi.updateItinerary(tripId, payload),
+  });
+
+export const useUpdateInclusions = () =>
+  useMutation<TripResponse, any, { tripId: string; payload: InclusionsStepPayload }>({
+    mutationFn: ({ tripId, payload }) => tripApi.updateInclusions(tripId, payload),
+  });
+
+export const useUpdatePricing = () =>
+  useMutation<TripResponse, any, { tripId: string; payload: PricingStepPayload }>({
+    mutationFn: ({ tripId, payload }) => tripApi.updatePricing(tripId, payload),
+  });
+
+export const useUpdateAudience = () =>
+  useMutation<TripResponse, any, { tripId: string; payload: AudienceStepPayload }>({
+    mutationFn: ({ tripId, payload }) => tripApi.updateAudience(tripId, payload),
+  });
+
+export const useUpdateDescription = () =>
+  useMutation<TripResponse, any, { tripId: string; payload: DescriptionStepPayload }>({
+    mutationFn: ({ tripId, payload }) => tripApi.updateDescription(tripId, payload),
+  });
 
 export function usePublishTrip() {
   return useMutation<TripResponse, any, { tripId: string }>({
-    mutationFn: async ({ tripId }) => {
-      const { data } = await api.post(`/trips/${tripId}/publish`, {});
-      return data;
-    },
+    mutationFn: ({ tripId }) => tripApi.publish(tripId),
   });
 }
 
 export function useGetTrip(tripId: string | null) {
   return useQuery<TripResponse>({
     queryKey: ['trip', tripId],
-    queryFn: async () => {
-      const { data } = await api.get(`/trips/${tripId}`);
-      return data;
-    },
+    queryFn: () => tripApi.get(tripId!),
     enabled: !!tripId,
   });
 }
@@ -58,9 +58,6 @@ export function useGetTrip(tripId: string | null) {
 export function useMyDraftTrips() {
   return useQuery<TripResponse[]>({
     queryKey: ['trips', 'draft'],
-    queryFn: async () => {
-      const { data } = await api.get('/trips/', { params: { trip_status: 'draft' } });
-      return data;
-    },
+    queryFn: () => tripApi.getDrafts(),
   });
 }

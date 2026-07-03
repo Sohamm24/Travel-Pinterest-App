@@ -5,14 +5,14 @@ import { TYPOGRAPHY } from '../../../../constants/theme';
 
 // In a real app, replace these with actual image assets
 const CATEGORIES = [
-  { key: 'travel',    label: 'Travel',      emoji: '🗺️' },
-  { key: 'beach',     label: 'Beach',       emoji: '🏖️' },
-  { key: 'hill',      label: 'Hill',        emoji: '⛰️' },
-  { key: 'trekking',  label: 'Trekking',    emoji: '🥾' },
-  { key: 'bikeriders',label: 'Bike Riders', emoji: '🏍️' },
-  { key: 'heritage',  label: 'Heritage',    emoji: '🏛️' },
-  { key: 'wildlife',  label: 'Wildlife',    emoji: '🦁' },
-  { key: 'citytour',  label: 'City tour',   emoji: '🏙️' },
+  { key: 'Travel',    label: 'Travel',      emoji: '🗺️' },
+  { key: 'Beach',     label: 'Beach',       emoji: '🏖️' },
+  { key: 'Hill',      label: 'Hill',        emoji: '⛰️' },
+  { key: 'Trekking',  label: 'Trekking',    emoji: '🥾' },
+  { key: 'Bikeriders',label: 'Bike Riders', emoji: '🏍️' },
+  { key: 'Heritage',  label: 'Heritage',    emoji: '🏛️' },
+  { key: 'Wildlife',  label: 'Wildlife',    emoji: '🦁' },
+  { key: 'Citytour',  label: 'City tour',   emoji: '🏙️' },
 ];
 
 export default function Step5Audience({ formData, setFormData }: any) {
