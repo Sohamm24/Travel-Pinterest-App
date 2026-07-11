@@ -12,13 +12,25 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { PlusCircle, X } from 'lucide-react-native';
+import type { UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY } from '../../../../constants/theme';
 import { uploadMedia } from './Upload-media';
+import type { CreateTripFormValues } from '../types';
 
-export default function Step1BasicInfo({ formData, setFormData, tripId }: any) {
+interface Props {
+  watch: UseFormWatch<CreateTripFormValues>;
+  setValue: UseFormSetValue<CreateTripFormValues>;
+  tripId: string | null;
+}
+
+export default function Step1BasicInfo({ watch, setValue, tripId }: Props) {
   const { colors } = useTheme();
   const [uploading, setUploading] = useState(false);
+
+  const title = watch('title');
+  const thumbnail = watch('thumbnail');
+  const thumbnailPath = watch('thumbnailPath');
 
   const handlePickThumbnail = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -31,24 +43,20 @@ export default function Step1BasicInfo({ formData, setFormData, tripId }: any) {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [16, 9],
-      quality: 1, // we compress manually below
+      quality: 1,
     });
 
     if (result.canceled || !result.assets?.[0]) return;
 
     const asset = result.assets[0];
 
-    // Show local preview immediately — no waiting on upload
-    setFormData((prev: any) => ({
-      ...prev,
-      thumbnail: asset.uri,          // local URI for instant preview
-      thumbnailPath: null,           // clears any previous confirmed path
-      thumbnailUploading: true,
-    }));
+    // Show local preview immediately — upload happens in background
+    setValue('thumbnail', asset.uri);
+    setValue('thumbnailPath', null);
+    setValue('thumbnailUploading', true);
 
     setUploading(true);
     try {
-      // Compress before upload: max 1200px wide, 80% quality
       const compressed = await ImageManipulator.manipulateAsync(
         asset.uri,
         [{ resize: { width: 1200 } }],
@@ -59,43 +67,32 @@ export default function Step1BasicInfo({ formData, setFormData, tripId }: any) {
         localUri: compressed.uri,
         mimeType: 'image/jpeg',
         mediaContext: 'thumbnail',
-        tripId: tripId ?? 'draft', // handled server-side if trip not created yet
+        tripId: tripId ?? 'draft',
       });
 
-      setFormData((prev: any) => ({
-        ...prev,
-        thumbnailPath: filePath,     // confirmed bucket path
-        thumbnail: publicUrl,        // swap preview to CDN URL
-        thumbnailUploading: false,
-      }));
-    } catch (err: any) {
+      setValue('thumbnailPath', filePath);
+      setValue('thumbnail', publicUrl);
+    } catch {
       Alert.alert('Upload failed', 'Could not upload thumbnail. You can retry.');
-      setFormData((prev: any) => ({
-        ...prev,
-        thumbnailUploading: false,
-        // keep local preview so user can retry without re-picking
-      }));
     } finally {
+      setValue('thumbnailUploading', false);
       setUploading(false);
     }
   };
 
   const handleRemoveThumbnail = () => {
-    setFormData((prev: any) => ({
-      ...prev,
-      thumbnail: null,
-      thumbnailPath: null,
-      thumbnailUploading: false,
-    }));
+    setValue('thumbnail', null);
+    setValue('thumbnailPath', null);
+    setValue('thumbnailUploading', false);
   };
 
   return (
     <View style={styles.container}>
       <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>TRIP TITLE</Text>
       <TextInput
-        style={[styles.titleInput, { color: formData.title ? colors.textPrimary : '#9CA3AF' }]}
-        value={formData.title}
-        onChangeText={(t) => setFormData((prev: any) => ({ ...prev, title: t }))}
+        style={[styles.titleInput, { color: title ? colors.textPrimary : '#9CA3AF' }]}
+        value={title}
+        onChangeText={(t) => setValue('title', t)}
         placeholder={`A creative title like "This trip will\nchange the way you look at\nladakh"`}
         placeholderTextColor="#C4C4CF"
         multiline
@@ -103,16 +100,14 @@ export default function Step1BasicInfo({ formData, setFormData, tripId }: any) {
         textAlignVertical="top"
       />
 
-      {/* Thumbnail upload */}
       <Text style={[styles.fieldLabel, { color: colors.textPrimary, marginTop: 4 }]}>
         TRIP THUMBNAIL
       </Text>
 
-      {formData.thumbnail ? (
+      {thumbnail ? (
         <View style={styles.previewWrapper}>
-          <Image source={{ uri: formData.thumbnail }} style={styles.thumbnailImage} />
+          <Image source={{ uri: thumbnail }} style={styles.thumbnailImage} />
 
-          {/* Uploading overlay */}
           {uploading && (
             <View style={styles.uploadingOverlay}>
               <ActivityIndicator color="#fff" size="large" />
@@ -120,15 +115,13 @@ export default function Step1BasicInfo({ formData, setFormData, tripId }: any) {
             </View>
           )}
 
-          {/* Remove button (top-right) */}
           {!uploading && (
             <TouchableOpacity style={styles.removeBtn} onPress={handleRemoveThumbnail} hitSlop={8}>
               <X color="#fff" size={16} />
             </TouchableOpacity>
           )}
 
-          {/* Failed badge */}
-          {!uploading && !formData.thumbnailPath && (
+          {!uploading && !thumbnailPath && (
             <TouchableOpacity style={styles.retryBadge} onPress={handlePickThumbnail}>
               <Text style={styles.retryText}>Upload failed · Tap to retry</Text>
             </TouchableOpacity>
@@ -156,14 +149,12 @@ export default function Step1BasicInfo({ formData, setFormData, tripId }: any) {
 
 const styles = StyleSheet.create({
   container: { gap: 12 },
-
   fieldLabel: {
     fontSize: 12,
     fontFamily: TYPOGRAPHY.fontFamilyBold,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
-
   titleInput: {
     fontSize: 20,
     fontFamily: TYPOGRAPHY.fontFamily,
@@ -171,7 +162,6 @@ const styles = StyleSheet.create({
     minHeight: 90,
     paddingTop: 0,
   },
-
   uploadArea: {
     borderRadius: 12,
     height: 180,
@@ -180,11 +170,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
-  uploadLabel: {
-    fontSize: 14,
-    fontFamily: TYPOGRAPHY.fontFamily,
-  },
-
+  uploadLabel: { fontSize: 14, fontFamily: TYPOGRAPHY.fontFamily },
   previewWrapper: {
     borderRadius: 12,
     height: 180,
@@ -192,10 +178,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  thumbnailImage: {
-    width: '100%',
-    height: '100%',
-  },
+  thumbnailImage: { width: '100%', height: '100%' },
   uploadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
@@ -203,11 +186,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  uploadingText: {
-    color: '#fff',
-    fontSize: 14,
-    fontFamily: TYPOGRAPHY.fontFamilySemiBold,
-  },
+  uploadingText: { color: '#fff', fontSize: 14, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
   removeBtn: {
     position: 'absolute',
     top: 10,
@@ -225,14 +204,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     alignItems: 'center',
   },
-  retryText: {
-    color: '#fff',
-    fontSize: 13,
-    fontFamily: TYPOGRAPHY.fontFamilySemiBold,
-  },
-
-  hint: {
-    fontSize: 12,
-    fontFamily: TYPOGRAPHY.fontFamily,
-  },
+  retryText: { color: '#fff', fontSize: 13, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
+  hint: { fontSize: 12, fontFamily: TYPOGRAPHY.fontFamily },
 });

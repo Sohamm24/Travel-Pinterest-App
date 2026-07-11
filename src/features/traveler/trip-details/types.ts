@@ -22,17 +22,10 @@ export interface TripDetail {
   title: string;
   description?: string;
   location?: { name: string };
-  start_date?: string;
-  end_date?: string;
   budget?: number;
   confirmation_amount?: number;
   max_travellers?: number;
   confirmed_travellers?: number;
-  interested_count?: number;
-  is_interested?: boolean;
-  is_bookmarked?: boolean;
-  cover_image?: string;
-  route_map_image?: string;
   organizer?: {
     id: number;
     name: string;

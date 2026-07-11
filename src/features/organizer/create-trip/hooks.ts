@@ -7,56 +7,68 @@ import type {
   PricingStepPayload,
   AudienceStepPayload,
   DescriptionStepPayload,
-  TripResponse,
+  TripDraftResponse,
 } from './types';
 
+// ─── Draft creation ────────────────────────────────────────────────────────
+
+export const useCreateTripDraft = () =>
+  useMutation<TripDraftResponse, any, void>({
+    mutationFn: () => tripApi.createDraft(),
+  });
+
+// ─── Step mutations ────────────────────────────────────────────────────────
 
 export const useUpdateBasicInfo = () =>
-  useMutation<TripResponse, any, { tripId: string; payload: Step1Payload }>({
+  useMutation<TripDraftResponse, any, { tripId: string; payload: Step1Payload }>({
     mutationFn: ({ tripId, payload }) => tripApi.updateBasicInfo(tripId, payload),
   });
 
 export const useUpdateItinerary = () =>
-  useMutation<TripResponse, any, { tripId: string; payload: ItineraryStepPayload }>({
+  useMutation<TripDraftResponse, any, { tripId: string; payload: ItineraryStepPayload }>({
     mutationFn: ({ tripId, payload }) => tripApi.updateItinerary(tripId, payload),
   });
 
 export const useUpdateInclusions = () =>
-  useMutation<TripResponse, any, { tripId: string; payload: InclusionsStepPayload }>({
+  useMutation<TripDraftResponse, any, { tripId: string; payload: InclusionsStepPayload }>({
     mutationFn: ({ tripId, payload }) => tripApi.updateInclusions(tripId, payload),
   });
 
 export const useUpdatePricing = () =>
-  useMutation<TripResponse, any, { tripId: string; payload: PricingStepPayload }>({
+  useMutation<TripDraftResponse, any, { tripId: string; payload: PricingStepPayload }>({
     mutationFn: ({ tripId, payload }) => tripApi.updatePricing(tripId, payload),
   });
 
 export const useUpdateAudience = () =>
-  useMutation<TripResponse, any, { tripId: string; payload: AudienceStepPayload }>({
+  useMutation<TripDraftResponse, any, { tripId: string; payload: AudienceStepPayload }>({
     mutationFn: ({ tripId, payload }) => tripApi.updateAudience(tripId, payload),
   });
 
 export const useUpdateDescription = () =>
-  useMutation<TripResponse, any, { tripId: string; payload: DescriptionStepPayload }>({
+  useMutation<TripDraftResponse, any, { tripId: string; payload: DescriptionStepPayload }>({
     mutationFn: ({ tripId, payload }) => tripApi.updateDescription(tripId, payload),
   });
 
-export function usePublishTrip() {
-  return useMutation<TripResponse, any, { tripId: string }>({
+export const usePublishTrip = () =>
+  useMutation<TripDraftResponse, any, { tripId: string }>({
     mutationFn: ({ tripId }) => tripApi.publish(tripId),
   });
-}
 
-export function useGetTrip(tripId: string | null) {
-  return useQuery<TripResponse>({
+// ─── Queries ───────────────────────────────────────────────────────────────
+
+export const useGetTrip = (
+  tripId?: string | null,
+  enabled = true
+) => {
+  return useQuery({
     queryKey: ['trip', tripId],
     queryFn: () => tripApi.get(tripId!),
-    enabled: !!tripId,
+    enabled: !!tripId && enabled,
   });
-}
+};
 
 export function useMyDraftTrips() {
-  return useQuery<TripResponse[]>({
+  return useQuery<TripDraftResponse[]>({
     queryKey: ['trips', 'draft'],
     queryFn: () => tripApi.getDrafts(),
   });

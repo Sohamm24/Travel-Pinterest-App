@@ -1,34 +1,14 @@
-export interface CreateTripActivity {
-  sequence: number;
+// ─── Itinerary UI types ────────────────────────────────────────────────────
+
+export interface ItineraryItem {
+  id: string;
   title: string;
-  description: string;
   location: string;
-  start_time: string;
-  end_time: string;
-}
-
-export interface CreateTripDay {
-  day_number: number;
-  activities: CreateTripActivity[];
-}
-
-export interface CreateTripFAQ {
-  question: string;
-  answer: string;
-}
-
-export interface CreateTripPayload {
-  title: string;
-  location?: { name: string };
-  start_date?: string;
-  end_date?: string;
-  is_one_day_trip?: boolean;
-  budget?: number;
-  confirmation_amount?: number;
-  max_travellers?: number;
-  description?: string;
-  frequently_asked?: CreateTripFAQ[];
-  itinerary?: CreateTripDay[];
+  date: string;         // "DD Mon YYYY" — UI display only
+  time: string;         // "HH:MM"       — UI display only
+  image: string | null; // local preview URI or CDN URL
+  imagePath: string | null; // confirmed bucket path → sent as `media` to API
+  imageUploading?: boolean;
 }
 
 export interface Step1Payload {
@@ -36,8 +16,15 @@ export interface Step1Payload {
   thumbnail: string;
 }
 
+export interface ItineraryActivityPayload {
+  title: string;
+  location: { name: string };
+  time: string;   // ISO-8601
+  media: string;  // bucket path
+}
+
 export interface ItineraryStepPayload {
-  itinerary: any[];
+  itinerary: ItineraryActivityPayload[];
 }
 
 export interface InclusionsStepPayload {
@@ -48,7 +35,7 @@ export interface PricingStepPayload {
   max_travellers?: number;
   budget?: number;
   confirmation_amount?: number;
-  confirmation_deadline: string;
+  confirmation_deadline: string; // ISO-8601
 }
 
 export interface AudienceStepPayload {
@@ -68,7 +55,9 @@ export type StepKey =
   | 'audience'
   | 'description';
 
-export interface TripResponse {
+// ─── Backend draft response ────────────────────────────────────────────────
+
+export interface TripDraftResponse {
   trip_id: string;
   status: 'draft' | 'published';
   last_completed_step: number;
@@ -85,3 +74,47 @@ export interface TripResponse {
   frequently_asked?: { question: string; answer: string }[];
   [key: string]: any;
 }
+
+// ─── Form values (single source of truth for useForm) ─────────────────────
+
+export interface CreateTripFormValues {
+  title: string;
+  thumbnail: string | null;
+  thumbnailPath: string | null;
+  thumbnailUploading: boolean;
+  itinerary: ItineraryItem[];
+  inclusions: Record<string, boolean>;
+  maxTravellers: string;
+  budget: string;
+  confirmationAmount: string;
+  confirmLastByDate: string;
+  confirmLastByTime: string;
+  audience: string;
+  description: string;
+  frequently_asked: { id: string; question: string; answer: string }[];
+}
+
+export const INITIAL_FORM_VALUES: CreateTripFormValues = {
+  title: '',
+  thumbnail: null,
+  thumbnailPath: null,
+  thumbnailUploading: false,
+  itinerary: [],
+  inclusions: {},
+  maxTravellers: '',
+  budget: '',
+  confirmationAmount: '',
+  confirmLastByDate: '',
+  confirmLastByTime: '',
+  audience: '',
+  description: '',
+  frequently_asked: [],
+};
+
+
+/** Unique AsyncStorage key for a trip draft, scoped per trip_id. */
+export const tripDraftStorageKey = (tripId: string) => `trip_draft_${tripId}`;
+
+// ─── Legacy alias (some step payload types may reference TripResponse) ─────
+/** @deprecated Use TripDraftResponse instead */
+export type TripResponse = TripDraftResponse;

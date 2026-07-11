@@ -13,7 +13,8 @@ import { useNavigation } from '@react-navigation/native';
 import { ChevronLeft, Search, MapPin, TrendingUp } from 'lucide-react-native';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY, SHAPES, SPACING } from '../../../../constants/theme';
-import { api } from '../../../../services/api';
+import { homeApi } from '../api';
+
 
 const POPULAR_CITIES = [
   { name: 'Ladakh', emoji: '🏔️' },
@@ -39,7 +40,7 @@ export default function SearchPage() {
     setLoading(true);
     setSearched(true);
     try {
-      const data = await api.searchTrips(query.trim());
+      const data = await homeApi.searchTrips(query.trim());
       setResults(data);
     } catch {
       setResults([]);
@@ -52,7 +53,7 @@ export default function SearchPage() {
     setQuery(city);
     setLoading(true);
     setSearched(true);
-    api.searchTrips(city).then(setResults).catch(() => setResults([])).finally(() => setLoading(false));
+    homeApi.searchTrips(city).then(setResults).catch(() => setResults([])).finally(() => setLoading(false));
   };
 
   return (

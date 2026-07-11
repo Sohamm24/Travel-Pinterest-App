@@ -16,7 +16,8 @@ import { useTheme } from '../../../context/ThemeContext';
 import { TYPOGRAPHY, SHAPES, SPACING, COLORS } from '../../../constants/theme';
 import { useAuthStore } from '../../../store/authStore';
 import { useUserStore } from '../../../store/userStore';
-import { api } from '../../../services/api';
+import { profileApi } from '../../../features/traveler/profile/api';
+
 import { useMyOrganizerProfile } from './hooks';
 
 function SectionHeading({ label, colors }: { label: string; colors: any }) {
@@ -71,7 +72,7 @@ export default function OrganizerProfileScreen() {
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: async () => { try { await api.logout(); } catch {} await logout(); } },
+      { text: 'Logout', style: 'destructive', onPress: async () => { try { await profileApi.logout(); } catch {} await logout(); } },
     ]);
   };
 

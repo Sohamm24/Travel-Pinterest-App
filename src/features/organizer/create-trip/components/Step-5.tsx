@@ -1,23 +1,29 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import type { UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY } from '../../../../constants/theme';
+import type { CreateTripFormValues } from '../types';
 
-// In a real app, replace these with actual image assets
+interface Props {
+  watch: UseFormWatch<CreateTripFormValues>;
+  setValue: UseFormSetValue<CreateTripFormValues>;
+}
+
 const CATEGORIES = [
-  { key: 'Travel',    label: 'Travel',      emoji: '🗺️' },
-  { key: 'Beach',     label: 'Beach',       emoji: '🏖️' },
-  { key: 'Hill',      label: 'Hill',        emoji: '⛰️' },
-  { key: 'Trekking',  label: 'Trekking',    emoji: '🥾' },
-  { key: 'Bikeriders',label: 'Bike Riders', emoji: '🏍️' },
-  { key: 'Heritage',  label: 'Heritage',    emoji: '🏛️' },
-  { key: 'Wildlife',  label: 'Wildlife',    emoji: '🦁' },
-  { key: 'Citytour',  label: 'City tour',   emoji: '🏙️' },
+  { key: 'Travel',     label: 'Travel',      emoji: '🗺️' },
+  { key: 'Beach',      label: 'Beach',       emoji: '🏖️' },
+  { key: 'Hill',       label: 'Hill',        emoji: '⛰️' },
+  { key: 'Trekking',   label: 'Trekking',    emoji: '🥾' },
+  { key: 'Bikeriders', label: 'Bike Riders', emoji: '🏍️' },
+  { key: 'Heritage',   label: 'Heritage',    emoji: '🏛️' },
+  { key: 'Wildlife',   label: 'Wildlife',    emoji: '🦁' },
+  { key: 'Citytour',   label: 'City tour',   emoji: '🏙️' },
 ];
 
-export default function Step5Audience({ formData, setFormData }: any) {
+export default function Step5Audience({ watch, setValue }: Props) {
   const { colors } = useTheme();
-  const selected: string = formData.audience ?? '';
+  const selected = watch('audience') ?? '';
 
   return (
     <View style={styles.container}>
@@ -32,7 +38,7 @@ export default function Step5Audience({ formData, setFormData }: any) {
             <TouchableOpacity
               key={cat.key}
               style={styles.categoryItem}
-              onPress={() => setFormData({ ...formData, audience: cat.key })}
+              onPress={() => setValue('audience', cat.key)}
               activeOpacity={0.75}
             >
               <View
@@ -65,22 +71,14 @@ export default function Step5Audience({ formData, setFormData }: any) {
 
 const styles = StyleSheet.create({
   container: { gap: 20 },
-
   sectionLabel: {
     fontSize: 12,
     fontFamily: TYPOGRAPHY.fontFamilyBold,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
-
-  // 4 items per row — two rows of 4
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
   categoryItem: {
-    // exactly 25% width so 4 fit per row, no gap needed (padding creates visual spacing)
     width: '25%',
     alignItems: 'center',
     paddingVertical: 8,
@@ -96,12 +94,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  categoryIconBoxSelected: {
-    borderWidth: 2,
-  },
-  categoryEmoji: {
-    fontSize: 28,
-  },
+  categoryIconBoxSelected: { borderWidth: 2 },
+  categoryEmoji: { fontSize: 28 },
   categoryLabel: {
     fontSize: 11,
     fontFamily: TYPOGRAPHY.fontFamilySemiBold,

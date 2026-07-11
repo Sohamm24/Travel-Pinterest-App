@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
-import { api } from 'src/services/api';
+import { client } from '../utils/apiClient';
 
 interface JwtPayload {
   sub: string;
@@ -115,7 +115,7 @@ export const useAuthStore = create<AuthState>()(
           }
 
           try {
-            const data = await api.refreshAuth({
+            const { data } = await client.post('/api/v1/auth/refresh', {
               refresh_token: refreshToken,
             });
 

@@ -26,6 +26,8 @@ export const lightColors = {
   // Text
   textPrimary: '#262626',   // Neutral 800 — Titles & important text
   textSecondary: '#404040', // Neutral 700 — Supporting text
+  bannerText: '#C09E67',
+  banner:'#ffffffff',
 
   // Misc
   border: '#E5E7EB',
@@ -51,7 +53,7 @@ export const darkColors = {
   error: '#EF4444',
 
   // Surfaces
-  background: '#0A0A0A',
+  background: '#141414ff',
   surface: '#141414',
   card: '#1A1A1A',
   headerBg: '#0A0A0A',
@@ -59,6 +61,8 @@ export const darkColors = {
   // Text
   textPrimary: '#F3F4F6',   // Neutral 100
   textSecondary: '#9CA3AF', // Neutral 400
+  bannerText: '#C09E67',
+  banner:'#141414ff',
 
   // Misc
   border: '#272727',

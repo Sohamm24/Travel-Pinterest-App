@@ -4,7 +4,6 @@ import { useUserStore } from '../../../store/userStore';
 
 export function useMyOrganizerTrips() {
   const organizerId = useUserStore((s) => s.organizerId);
-
   return useQuery({
     queryKey: ['my_organizer_trips', organizerId],
     queryFn: () => tripsDashboardApi.getOrganizerTrips(organizerId ?? ''),

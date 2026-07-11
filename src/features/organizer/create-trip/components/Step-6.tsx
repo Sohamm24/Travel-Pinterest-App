@@ -6,8 +6,15 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
+import type { UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY } from '../../../../constants/theme';
+import type { CreateTripFormValues } from '../types';
+
+interface Props {
+  watch: UseFormWatch<CreateTripFormValues>;
+  setValue: UseFormSetValue<CreateTripFormValues>;
+}
 
 interface FAQ {
   id: string;
@@ -15,26 +22,28 @@ interface FAQ {
   answer: string;
 }
 
-export default function Step6DescriptionFAQ({ formData, setFormData }: any) {
+export default function Step6DescriptionFAQ({ watch, setValue }: Props) {
   const { colors } = useTheme();
   const [draftQ, setDraftQ] = useState('');
   const [draftA, setDraftA] = useState('');
 
-  const faqs: FAQ[] = formData.frequently_asked ?? [];
+  const description = watch('description');
+  const faqs: FAQ[] = watch('frequently_asked') ?? [];
 
   const handleAddFAQ = () => {
     if (!draftQ.trim() || !draftA.trim()) return;
-    const newFAQ: FAQ = { id: Date.now().toString(), question: draftQ.trim(), answer: draftA.trim() };
-    setFormData({ ...formData, frequently_asked: [...faqs, newFAQ] });
+    const newFAQ: FAQ = {
+      id: Date.now().toString(),
+      question: draftQ.trim(),
+      answer: draftA.trim(),
+    };
+    setValue('frequently_asked', [...faqs, newFAQ]);
     setDraftQ('');
     setDraftA('');
   };
 
   const handleRemoveFAQ = (id: string) => {
-    setFormData({
-      ...formData,
-      frequently_asked: faqs.filter((f) => f.id !== id),
-    });
+    setValue('frequently_asked', faqs.filter((f) => f.id !== id));
   };
 
   return (
@@ -43,13 +52,10 @@ export default function Step6DescriptionFAQ({ formData, setFormData }: any) {
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>ABOUT THIS TRIP</Text>
         <TextInput
-          style={[
-            styles.descriptionInput,
-            { borderColor: '#C7C7D4', color: colors.textPrimary },
-          ]}
-          value={formData.description}
-          onChangeText={(t) => setFormData({ ...formData, description: t })}
-          placeholder="write a description for the trip ( Max word limit 150)"
+          style={[styles.descriptionInput, { borderColor: '#C7C7D4', color: colors.textPrimary }]}
+          value={description}
+          onChangeText={(t) => setValue('description', t)}
+          placeholder="Write a description for the trip (max 150 words)"
           placeholderTextColor="#C4C4CF"
           multiline
           textAlignVertical="top"
@@ -60,10 +66,7 @@ export default function Step6DescriptionFAQ({ formData, setFormData }: any) {
       {faqs.length > 0 && (
         <View style={styles.faqList}>
           {faqs.map((faq) => (
-            <View
-              key={faq.id}
-              style={[styles.faqCard, { borderColor: colors.border }]}
-            >
+            <View key={faq.id} style={[styles.faqCard, { borderColor: colors.border }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.faqQ, { color: colors.textPrimary }]}>Q: {faq.question}</Text>
                 <Text style={[styles.faqA, { color: colors.textSecondary }]}>A: {faq.answer}</Text>
@@ -117,7 +120,6 @@ export default function Step6DescriptionFAQ({ formData, setFormData }: any) {
 
 const styles = StyleSheet.create({
   container: { gap: 24 },
-
   section: { gap: 12 },
   sectionLabel: {
     fontSize: 12,
@@ -125,7 +127,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
-
   descriptionInput: {
     borderWidth: 1,
     borderRadius: 10,
@@ -135,7 +136,6 @@ const styles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.fontFamily,
     lineHeight: 20,
   },
-
   faqList: { gap: 10 },
   faqCard: {
     flexDirection: 'row',
@@ -148,13 +148,7 @@ const styles = StyleSheet.create({
   faqQ: { fontSize: 13, fontFamily: TYPOGRAPHY.fontFamilySemiBold, marginBottom: 4 },
   faqA: { fontSize: 13, fontFamily: TYPOGRAPHY.fontFamily },
   removeText: { fontSize: 16, color: '#999', paddingTop: 2 },
-
-  faqForm: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 16,
-    gap: 14,
-  },
+  faqForm: { borderWidth: 1, borderRadius: 10, padding: 16, gap: 14 },
   faqFieldWrapper: { gap: 6 },
   fieldSubLabel: { fontSize: 13, fontFamily: TYPOGRAPHY.fontFamily },
   faqInput: {
@@ -165,16 +159,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: TYPOGRAPHY.fontFamily,
   },
-
-  addBtn: {
-    paddingVertical: 13,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  addBtnText: {
-    fontSize: 15,
-    fontFamily: TYPOGRAPHY.fontFamilySemiBold,
-    color: '#fff',
-  },
+  addBtn: { paddingVertical: 13, borderRadius: 8, alignItems: 'center', marginTop: 4 },
+  addBtnText: { fontSize: 15, fontFamily: TYPOGRAPHY.fontFamilySemiBold, color: '#fff' },
 });

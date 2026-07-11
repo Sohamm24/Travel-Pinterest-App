@@ -6,7 +6,7 @@ import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY, SHAPES, SPACING } from '../../../../constants/theme';
 import { useMyOrganizerProfile } from '../hooks';
 import { useUserStore } from '../../../../store/userStore';
-import { api } from '../../../../services/api';
+import { organizerProfileApi } from '../api';
 
 export default function EditOrganizerProfile() {
   const navigation = useNavigation<any>();
@@ -22,7 +22,7 @@ export default function EditOrganizerProfile() {
     setLoading(true);
     try {
       if (!organizerId) return;
-      await api.updateOrganizer(organizerId, { bio, region });
+      await organizerProfileApi.updateOrganizer(organizerId, { bio, region });
       refetch();
       navigation.goBack();
     } catch (err) {

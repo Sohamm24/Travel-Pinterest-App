@@ -5,7 +5,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY, SHAPES, SPACING } from '../../../../constants/theme';
 import { useUserStore } from '../../../../store/userStore';
-import { api } from '../../../../services/api';
+import { profileApi } from '../api';
 
 export default function EditProfile() {
   const navigation = useNavigation<any>();
@@ -19,7 +19,7 @@ export default function EditProfile() {
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const updated = await api.updateMe({ name: name.trim() });
+      const updated = await profileApi.updateMe({ name: name.trim() });
       setProfile(updated as any);
       navigation.goBack();
     } catch (err) {

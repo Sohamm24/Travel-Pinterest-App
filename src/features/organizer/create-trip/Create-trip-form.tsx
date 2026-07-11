@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,12 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useForm } from 'react-hook-form';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../../context/ThemeContext';
 import { TYPOGRAPHY } from '../../../constants/theme';
 import {
+  useCreateTripDraft,
   useUpdateBasicInfo,
   useUpdateItinerary,
   useUpdateInclusions,
@@ -25,7 +28,11 @@ import {
   usePublishTrip,
   useGetTrip,
 } from './hooks';
-import type { StepKey } from './types';
+import {
+  INITIAL_FORM_VALUES,
+  tripDraftStorageKey,
+} from './types';
+import type { CreateTripFormValues, StepKey } from './types';
 import Step1BasicInfo from './components/Step-1';
 import Step2Itinerary, { buildStep2Payload } from './components/Step-2';
 import Step3Inclusions from './components/Step-3';
@@ -35,60 +42,38 @@ import Step6DescriptionFAQ from './components/Step-6';
 import TripPreview from './components/Preview';
 
 const STEPS = [
-  { key: 'info', label: 'Basic Information' },
-  { key: 'itinerary', label: 'Trip Route & Itinerary' },
-  { key: 'inclusions', label: 'Inclusions and Exclusions' },
-  { key: 'pricing', label: 'Pricing and Seats' },
-  { key: 'audience', label: 'Target Audience' },
+  { key: 'info',        label: 'Basic Information' },
+  { key: 'itinerary',   label: 'Trip Route & Itinerary' },
+  { key: 'inclusions',  label: 'Inclusions and Exclusions' },
+  { key: 'pricing',     label: 'Pricing and Seats' },
+  { key: 'audience',    label: 'Target Audience' },
   { key: 'description', label: 'Description & FAQs' },
-  { key: 'preview', label: 'Review and Publish' },
+  { key: 'preview',     label: 'Review and Publish' },
 ] as const;
 
-const STEP_ORDER: StepKey[] = ['info', 'itinerary', 'inclusions', 'pricing', 'audience', 'description'];
-
-const INITIAL_FORM = {
-  title: '',
-  thumbnail: null as any,
-  itinerary: [] as any[],
-  inclusions: {} as Record<string, boolean>,
-  maxTravellers: '',
-  budget: '',
-  confirmationAmount: '',
-  confirmLastByDate: '',
-  confirmLastByTime: '',
-  audience: '' as string,
-  description: '',
-  frequently_asked: [] as { question: string; answer: string }[],
-};
+const STEP_ORDER: StepKey[] = [
+  'info', 'itinerary', 'inclusions', 'pricing', 'audience', 'description',
+];
 
 const MONTHS: Record<string, number> = {
-  Jan: 0,
-  Feb: 1,
-  Mar: 2,
-  Apr: 3,
-  May: 4,
-  Jun: 5,
-  Jul: 6,
-  Aug: 7,
-  Sep: 8,
-  Oct: 9,
-  Nov: 10,
-  Dec: 11,
+  Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4,  Jun: 5,
+  Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
 };
 
 function combineDateTime(date: string, time: string): string {
+  if (!date || !time) return new Date().toISOString();
   const [day, month, year] = date.split(' ');
+  const monthIndex = MONTHS[month];
+  if (monthIndex === undefined) return new Date().toISOString();
   const [hours, minutes] = time.split(':');
-
   const d = new Date(
     Number(year),
-    MONTHS[month],
+    monthIndex,
     Number(day),
     Number(hours),
-    Number(minutes)
+    Number(minutes),
   );
-
-  return d.toISOString();
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
 function StepHeader({ stepIndex, colors }: { stepIndex: number; colors: any }) {
@@ -112,13 +97,16 @@ export default function CreateTripForm() {
 
   const existingTripId: string | null = route.params?.tripId ?? null;
 
-  const [stepIndex, setStepIndex] = useState(0);
-  const [formData, setFormData] = useState<any>(INITIAL_FORM);
-  const [tripId, setTripId] = useState<string | null>(existingTripId);
-  const [hydrated, setHydrated] = useState(!existingTripId);
-  console.log(existingTripId)
-  const { data: existingTrip, isLoading: loadingDraft } = useGetTrip(existingTripId);
+  const { watch, setValue, getValues, reset } = useForm<CreateTripFormValues>({
+    defaultValues: INITIAL_FORM_VALUES,
+  });
 
+  const [stepIndex, setStepIndex] = useState(0);
+  const [tripId, setTripId] = useState<string | null>(existingTripId);
+  const [storageReady, setStorageReady] = useState(false);
+  const [shouldFetchBackend, setShouldFetchBackend] = useState(false);
+
+  const createDraft = useCreateTripDraft();
   const updateBasicInfo = useUpdateBasicInfo();
   const updateItinerary = useUpdateItinerary();
   const updateInclusions = useUpdateInclusions();
@@ -127,36 +115,121 @@ export default function CreateTripForm() {
   const updateDescription = useUpdateDescription();
   const publishTrip = usePublishTrip();
 
-  useEffect(() => {
-    if (existingTrip && !hydrated) {
-      setFormData({
-        title: existingTrip.title ?? '',
-        thumbnail: existingTrip.thumbnail ?? null,
-        itinerary: existingTrip.itinerary ?? [],
-        inclusions: existingTrip.inclusions ?? {},
-        maxTravellers: existingTrip.max_travellers?.toString() ?? '',
-        budget: existingTrip.budget?.toString() ?? '',
-        confirmationAmount: existingTrip.confirmation_amount?.toString() ?? '',
-        confirmLastByDate: existingTrip.confirmation_deadline
-          ? existingTrip.confirmation_deadline.split('T')[0]
-          : '',
-        confirmLastByTime: existingTrip.confirmation_deadline
-          ? existingTrip.confirmation_deadline.split('T')[1]?.slice(0, 5)
-          : '',
-        audience: existingTrip.categories?.[0] ?? '',
-        description: existingTrip.description ?? '',
-        frequently_asked: existingTrip.frequently_asked ?? [],
-      });
-      setStepIndex(Math.min(existingTrip.last_completed_step, STEP_ORDER.length - 1));
-      setHydrated(true);
-    }
-  }, [existingTrip, hydrated]);
+  const {
+    data: backendDraft,
+    isLoading: loadingDraft,
+    isError: draftError,
+  } = useGetTrip(existingTripId, shouldFetchBackend);
 
-  const currentStep = STEPS[stepIndex].key;
+  const saveToStorage = useCallback(
+    async (id: string, data: CreateTripFormValues) => {
+      try {
+        await AsyncStorage.setItem(tripDraftStorageKey(id), JSON.stringify(data));
+      } catch (e) {
+        if (__DEV__) console.error('Storage save failed:', e);
+      }
+    },
+    [],
+  );
+
+  const loadFromStorage = useCallback(
+    async (id: string): Promise<CreateTripFormValues | null> => {
+      try {
+        const raw = await AsyncStorage.getItem(tripDraftStorageKey(id));
+        if (!raw) return null;
+        return JSON.parse(raw) as CreateTripFormValues;
+      } catch (e) {
+        if (__DEV__) console.error('Storage load failed:', e);
+        return null;
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (storageReady) return;
+
+    const hydrate = async () => {
+      if (!existingTripId) {
+        setStorageReady(true);
+        return;
+      }
+
+      const cached = await loadFromStorage(existingTripId);
+
+      if (cached) {
+        reset(cached);
+        setStorageReady(true);
+        return;
+      }
+
+      setShouldFetchBackend(true);
+    };
+
+    hydrate();
+  }, [existingTripId, storageReady, reset, loadFromStorage]);
+
+  useEffect(() => {
+    if (!backendDraft || storageReady) return;
+
+    reset({
+      title: backendDraft.title ?? '',
+      thumbnail: backendDraft.thumbnail ?? null,
+      thumbnailPath: backendDraft.thumbnail ?? null,
+      thumbnailUploading: false,
+      itinerary: backendDraft.itinerary ?? [],
+      inclusions: backendDraft.inclusions ?? {},
+      maxTravellers: backendDraft.max_travellers?.toString() ?? '',
+      budget: backendDraft.budget?.toString() ?? '',
+      confirmationAmount: backendDraft.confirmation_amount?.toString() ?? '',
+      confirmLastByDate: backendDraft.confirmation_deadline?.split('T')[0] ?? '',
+      confirmLastByTime: backendDraft.confirmation_deadline?.split('T')[1]?.slice(0, 5) ?? '',
+      audience: backendDraft.categories?.[0] ?? '',
+      description: backendDraft.description ?? '',
+      frequently_asked: backendDraft.frequently_asked ?? [],
+    });
+
+    setStepIndex(Math.min(backendDraft.last_completed_step, STEP_ORDER.length - 1));
+    setStorageReady(true);
+  }, [backendDraft, storageReady, reset]);
+
+  useEffect(() => {
+    if (draftError) {
+      setStorageReady(true);
+    }
+  }, [draftError]);
+
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  const debouncedSave = useCallback(
+    (id: string, data: CreateTripFormValues) => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        saveToStorage(id, data);
+      }, 400);
+    },
+    [saveToStorage],
+  );
+
+  const formValues = watch();
+  useEffect(() => {
+    if (tripId && storageReady) {
+      debouncedSave(tripId, formValues);
+    }
+  }, [formValues, tripId, storageReady, debouncedSave]);
+
+  const currentStep = STEPS[stepIndex].key as StepKey | 'preview';
   const isFirst = stepIndex === 0;
   const isPreview = currentStep === 'preview';
 
   const submitting =
+    createDraft.isPending ||
     updateBasicInfo.isPending ||
     updateItinerary.isPending ||
     updateInclusions.isPending ||
@@ -165,100 +238,100 @@ export default function CreateTripForm() {
     updateDescription.isPending ||
     publishTrip.isPending;
 
-  const persistCurrentStep = async (): Promise<string | null> => {
+  const persistCurrentStep = async (activeTripId: string): Promise<void> => {
+    const values = getValues();
+
     switch (currentStep) {
       case 'info': {
-        console.log(existingTripId)
-        console.log(tripId)
-        if (!formData.title.trim()) return null;
+        if (!values.title.trim()) return;
         await updateBasicInfo.mutateAsync({
-          tripId,
-          payload: { title: formData.title.trim(), thumbnail: formData.thumbnail },
+          tripId: activeTripId,
+          payload: { title: values.title.trim(), thumbnail: values.thumbnailPath ?? '' },
         });
-        return tripId;
+        break;
       }
       case 'itinerary': {
-        if (!tripId) return tripId;
-        await updateItinerary.mutateAsync({ tripId, payload: buildStep2Payload(formData.itinerary) });
-        return tripId;
+        await updateItinerary.mutateAsync({
+          tripId: activeTripId,
+          payload: buildStep2Payload(values.itinerary),
+        });
+        break;
       }
       case 'inclusions': {
-        if (!tripId) return tripId;
-        await updateInclusions.mutateAsync({ tripId, payload: { inclusions: formData.inclusions } });
-        return tripId;
+        await updateInclusions.mutateAsync({
+          tripId: activeTripId,
+          payload: { inclusions: values.inclusions },
+        });
+        break;
       }
       case 'pricing': {
-        if (!tripId) return tripId;
         await updatePricing.mutateAsync({
-          tripId,
+          tripId: activeTripId,
           payload: {
-            max_travellers: formData.maxTravellers ? parseInt(formData.maxTravellers) : undefined,
-            budget: formData.budget ? parseInt(formData.budget) : undefined,
-            confirmation_amount: formData.confirmationAmount
-              ? parseInt(formData.confirmationAmount)
+            max_travellers: values.maxTravellers ? parseInt(values.maxTravellers) : undefined,
+            budget: values.budget ? parseInt(values.budget) : undefined,
+            confirmation_amount: values.confirmationAmount
+              ? parseInt(values.confirmationAmount)
               : undefined,
-            confirmation_deadline: combineDateTime(formData.confirmLastByDate, formData.confirmLastByTime),
+            confirmation_deadline: combineDateTime(values.confirmLastByDate, values.confirmLastByTime),
           },
         });
-        return tripId;
+        break;
       }
       case 'audience': {
-        if (!tripId) return tripId;
         await updateAudience.mutateAsync({
-          tripId,
-          payload: { categories: formData.audience ? [formData.audience] : [] },
+          tripId: activeTripId,
+          payload: { categories: values.audience ? [values.audience] : [] },
         });
-        return tripId;
+        break;
       }
       case 'description': {
-        if (!tripId) return tripId;
         await updateDescription.mutateAsync({
-          tripId,
+          tripId: activeTripId,
           payload: {
-            description: formData.description.trim(),
-            frequently_asked: formData.frequently_asked.filter(
-              (f: any) => f.question.trim() && f.answer.trim()
+            description: values.description.trim(),
+            frequently_asked: values.frequently_asked.filter(
+              (f) => f.question.trim() && f.answer.trim(),
             ),
           },
         });
-        return tripId;
+        break;
       }
-      default:
-        return tripId;
+      default: {
+        if (__DEV__) console.warn('persistCurrentStep: unhandled step', currentStep);
+        break;
+      }
     }
   };
 
   const handleNext = async () => {
-    if (currentStep === 'info' && !formData.title.trim()) {
+    const values = getValues();
+
+    if (currentStep === 'info' && !values.title.trim()) {
       Alert.alert('Required', 'Please enter a trip title.');
       return;
     }
+
     try {
-      await persistCurrentStep();
+      let activeTripId = tripId;
+
+      if (!activeTripId) {
+        const draft = await createDraft.mutateAsync();
+        activeTripId = draft.trip_id;
+        setTripId(activeTripId);
+        await saveToStorage(activeTripId, values);
+      }
+
+      await persistCurrentStep(activeTripId);
       setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
     } catch (err: any) {
-      console.log(err)
       Alert.alert('Error', err?.response?.data?.detail || 'Could not save this step. Please try again.');
     }
   };
 
   const handleBack = () => setStepIndex((i) => Math.max(i - 1, 0));
 
-  const handleSaveAndExit = async () => {
-    try {
-      await persistCurrentStep();
-      navigation.goBack();
-    } catch (err: any) {
-      Alert.alert(
-        'Error',
-        err?.response?.data?.detail || 'Could not save your progress. Exit anyway?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Exit anyway', style: 'destructive', onPress: () => navigation.goBack() },
-        ]
-      );
-    }
-  };
+  const handleSaveAndExit = () => navigation.goBack();
 
   const handleSubmit = async () => {
     if (!tripId) {
@@ -267,6 +340,7 @@ export default function CreateTripForm() {
     }
     try {
       await publishTrip.mutateAsync({ tripId });
+      await AsyncStorage.removeItem(tripDraftStorageKey(tripId));
       Alert.alert('Trip Published! 🎉', 'Your trip has been created successfully.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
@@ -278,23 +352,23 @@ export default function CreateTripForm() {
   const renderStep = () => {
     switch (currentStep) {
       case 'info':
-        return <Step1BasicInfo formData={formData} setFormData={setFormData} tripId={tripId} />;
+        return <Step1BasicInfo watch={watch} setValue={setValue} tripId={tripId} />;
       case 'itinerary':
-        return <Step2Itinerary formData={formData} setFormData={setFormData} tripId={tripId}/>;
+        return <Step2Itinerary watch={watch} setValue={setValue} tripId={tripId} />;
       case 'inclusions':
-        return <Step3Inclusions formData={formData} setFormData={setFormData} />;
+        return <Step3Inclusions watch={watch} setValue={setValue} />;
       case 'pricing':
-        return <Step4Pricing formData={formData} setFormData={setFormData} />;
+        return <Step4Pricing watch={watch} setValue={setValue} />;
       case 'audience':
-        return <Step5Audience formData={formData} setFormData={setFormData} />;
+        return <Step5Audience watch={watch} setValue={setValue} />;
       case 'description':
-        return <Step6DescriptionFAQ formData={formData} setFormData={setFormData} />;
+        return <Step6DescriptionFAQ watch={watch} setValue={setValue} />;
       case 'preview':
-        return <TripPreview formData={formData} colors={colors} />;
+        return <TripPreview formData={getValues()} colors={colors} />;
     }
   };
 
-  if (existingTripId && loadingDraft) {
+  if (existingTripId && (!storageReady || (shouldFetchBackend && loadingDraft))) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: '#fff', justifyContent: 'center' }]}>
         <ActivityIndicator color={colors.primary} size="large" />
@@ -303,25 +377,14 @@ export default function CreateTripForm() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#ffffffff' }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: '#fff' }]}>
       <View style={styles.topBar}>
         <TouchableOpacity
           onPress={handleSaveAndExit}
-          disabled={submitting}
-          style={[
-            styles.saveExitBtn,
-            { backgroundColor: colors.background ?? '#EDE9FA' },
-            submitting && { opacity: 0.6 },
-          ]}
+          style={[styles.saveExitBtn, { backgroundColor: colors.background ?? '#EDE9FA' }]}
         >
-          {submitting ? (
-            <ActivityIndicator color={colors.primary} size="small" />
-          ) : (
-            <>
-              <ChevronLeft color={colors.primary} size={16} />
-              <Text style={[styles.saveExitText, { color: colors.primary }]}>save and exit</Text>
-            </>
-          )}
+          <ChevronLeft color={colors.primary} size={16} />
+          <Text style={[styles.saveExitText, { color: colors.primary }]}>save and exit</Text>
         </TouchableOpacity>
       </View>
 
@@ -338,7 +401,10 @@ export default function CreateTripForm() {
               <View
                 style={[
                   styles.progressFillOnCard,
-                  { backgroundColor: colors.primary, width: `${(stepIndex / (STEPS.length - 1)) * 100}%` },
+                  {
+                    backgroundColor: colors.primary,
+                    width: `${(stepIndex / (STEPS.length - 1)) * 100}%`,
+                  },
                 ]}
               />
             </View>
@@ -351,12 +417,17 @@ export default function CreateTripForm() {
 
       <View style={[styles.footer, { backgroundColor: '#F5F5F7', borderTopColor: '#E5E7EB' }]}>
         <TouchableOpacity
-          style={[styles.prevBtn, { backgroundColor: isFirst ? '#E5E7EB' : (colors.background ?? '#EDE9FA') }]}
+          style={[
+            styles.prevBtn,
+            { backgroundColor: isFirst ? '#E5E7EB' : (colors.background ?? '#EDE9FA') },
+          ]}
           onPress={handleBack}
           disabled={isFirst}
         >
           <ChevronLeft color={isFirst ? '#9CA3AF' : colors.primary} size={20} />
-          <Text style={[styles.prevBtnText, { color: isFirst ? '#9CA3AF' : colors.primary }]}>Previous</Text>
+          <Text style={[styles.prevBtnText, { color: isFirst ? '#9CA3AF' : colors.primary }]}>
+            Previous
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -413,8 +484,24 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 24 : 16,
     borderTopWidth: 1,
   },
-  prevBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 30 },
+  prevBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 30,
+  },
   prevBtnText: { fontSize: 16, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
-  nextBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 30 },
+  nextBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 30,
+  },
   nextBtnText: { fontSize: 16, fontFamily: TYPOGRAPHY.fontFamilySemiBold, color: '#fff' },
 });

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "720962456",
+    "project_id": "troupe-150d6",
+    "storage_bucket": "troupe-150d6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:720962456:android:c569d097ddde1f8a5ee1ed",
+        "android_client_info": {
+          "package_name": "com.sohamnarvankar.troupe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhngskIERQpPYmqO-MYxbHjCcPziDVbg0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

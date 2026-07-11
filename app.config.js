@@ -2,23 +2,23 @@ import "dotenv/config";
 
 export default {
   expo: {
-    name: "TravelPinterest",
-    slug: "travel-pinterest",
-    scheme: "travelpinterest",
+    name: "Troupe",
+    slug: "troupe",
+    scheme: "troupe",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/logo.png",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
+    newArchEnabled: false,
     splash: {
       image: "./assets/logo.png",
       resizeMode: "contain",
-      backgroundColor: "#000000"
+      backgroundColor: "#ffffffff"
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.sohamnarvankar.travelpinterest",
-      scheme: "travelpinterest",
+      bundleIdentifier: "com.sohamnarvankar.troupe",
+      scheme: "troupe",
       infoPlist: {
         NSCameraUsageDescription:
           "TravelPinterest uses your camera to find matching travel destinations.",
@@ -33,11 +33,15 @@ export default {
         backgroundColor: "#000000"
       },
       edgeToEdgeEnabled: true,
-      package: "com.sohamnarvankar.travelpinterest",
+      package: "com.sohamnarvankar.troupe",
+      googleServicesFile: "./google-services.json",
       permissions: [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_IMAGES"
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       intentFilters: [
         {
@@ -45,7 +49,7 @@ export default {
           autoVerify: true,
           data: [
             {
-              scheme: "travelpinterest",
+              scheme: "troupe",
               host: "*"
             }
           ],
@@ -57,6 +61,15 @@ export default {
       favicon: "./assets/logo.png"
     },
     plugins: [
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/logo.png",
+          color: "#000000",
+          defaultChannel: "messages",
+          sounds: []
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -81,9 +94,9 @@ export default {
       EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
       EXPO_PUBLIC_GEOAPIFY_KEY: process.env.EXPO_PUBLIC_GEOAPIFY_KEY,
       eas: {
-        projectId: "7c913bad-7571-49a6-8530-99af7de02c37"
+        projectId: "4514bb9e-3e55-4ff7-a5e4-fa02cc55a859"
       }
     },
-    owner: "soham-narvankar"
+    owner: "sohamm24"
   }
 };

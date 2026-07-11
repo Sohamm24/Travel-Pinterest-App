@@ -30,7 +30,7 @@ export async function uploadMedia(opts: UploadOptions): Promise<UploadResult> {
     mime_type: mimeType,
     itinerary_slot: itinerarySlot ?? null,
   });
-  console.log(presignRes)
+
 
   const { presigned_url, file_path } = presignRes;
 

@@ -1,10 +1,10 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Compass, Users, User, Map, MessageCircle, Briefcase } from 'lucide-react-native';
+import { Compass, Users, User, Map, MessageCircle, Briefcase, MessageCircleCheck } from 'lucide-react-native';
 
 // Screens — Traveler mode
 import LandingPageScreen from '../features/traveler/home/LandingPageScreen';
-import OrganizersScreen from '../features/traveler/organizers/OrganizersScreen';
+import ChatsScreen from 'src/features/messaging/components/ChatsScreen';
 import TravellerProfileScreen from '../features/traveler/profile/TravellerProfileScreen';
 
 // Screens — Organizer mode
@@ -23,6 +23,7 @@ export type MainTabParamList = {
   HomeTab: undefined;
   OrganizersTab: undefined;
   ProfileTab: undefined;
+  ChatsTab: undefined;
   OrgTripsTab: undefined;
   OrgDiscussionsTab: undefined;
   OrgProfileTab: undefined;
@@ -67,11 +68,11 @@ export default function MainTabNavigator() {
             }}
           />
           <Tab.Screen
-            name="OrgDiscussionsTab"
-            component={TripDiscussionScreen}
+            name="ChatsTab"
+            component={ChatsScreen}
             options={{
-              tabBarLabel: 'Discussions',
-              tabBarIcon: ({ color, size }) => <MessageCircle color={color} size={size} />,
+              tabBarLabel: 'Messages',
+              tabBarIcon: ({ color, size }) => <MessageCircleCheck color={color} size={size} />,
             }}
           />
           <Tab.Screen
@@ -94,11 +95,11 @@ export default function MainTabNavigator() {
             }}
           />
           <Tab.Screen
-            name="OrganizersTab"
-            component={OrganizersScreen}
+            name="ChatsTab"
+            component={ChatsScreen}
             options={{
-              tabBarLabel: 'Organizer',
-              tabBarIcon: ({ color, size }) => <Users color={color} size={size} />,
+              tabBarLabel: 'Messages',
+              tabBarIcon: ({ color, size }) => <MessageCircleCheck color={color} size={size} />,
             }}
           />
           <Tab.Screen

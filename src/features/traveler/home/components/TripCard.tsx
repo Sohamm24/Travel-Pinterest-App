@@ -1,3 +1,5 @@
+// the design to be cloned
+
 import React from 'react';
 import {
   View,
@@ -7,14 +9,14 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
-import { Calendar, IndianRupee, Bookmark } from 'lucide-react-native';
+import { Calendar, IndianRupee, Bookmark, Users } from 'lucide-react-native';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY, SHAPES, SPACING } from '../../../../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface TripCardProps {
-  item: any;
+  item: TripCard;
   onPress: () => void;
 }
 
@@ -54,11 +56,12 @@ export default function TripCard({ item, onPress }: TripCardProps) {
             {item.budget?.toLocaleString('en-IN') || '0'} for one person
           </Text>
         </View>
-        {item.location?.name && (
-          <Text style={[styles.fromText, { color: colors.secondary }]}>
-            From {item.location.name}
+        <View style={styles.infoRow}>
+          <Users color={colors.textPrimary} size={14} />
+          <Text style={[styles.seatsLeft, { color: colors.textPrimary }]}>
+            {item.max_travellers - item.confirmed_travelers} seats left
           </Text>
-        )}
+        </View>
       </View>
 
       <View style={styles.cardRight}>
@@ -67,9 +70,6 @@ export default function TripCard({ item, onPress }: TripCardProps) {
         ) : (
           <View style={[styles.coverImage, { backgroundColor: colors.ternary }]} />
         )}
-        <TouchableOpacity style={styles.bookmarkBtn}>
-          <Bookmark color={colors.background} size={18} />
-        </TouchableOpacity>
         <View style={styles.organizerOverlay}>
           <View style={[styles.organizerAvatar, { backgroundColor: colors.secondary }]}>
             <Text style={styles.organizerInitial}>
@@ -115,16 +115,15 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: TYPOGRAPHY.sizes.xs,
-    fontFamily: TYPOGRAPHY.fontFamily,
+    fontFamily: TYPOGRAPHY.fontFamilyBold,
   },
   budgetText: {
     fontSize: TYPOGRAPHY.sizes.xs,
-    fontFamily: TYPOGRAPHY.fontFamilySemiBold,
+    fontFamily: TYPOGRAPHY.fontFamilyBold,
   },
-  fromText: {
+  seatsLeft: {
     fontSize: TYPOGRAPHY.sizes.xs,
-    fontFamily: TYPOGRAPHY.fontFamily,
-    marginTop: 4,
+    fontFamily: TYPOGRAPHY.fontFamilyBold,
   },
   cardRight: {
     width: SCREEN_WIDTH * 0.38,

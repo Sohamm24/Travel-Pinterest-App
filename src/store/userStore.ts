@@ -7,14 +7,10 @@ interface UserState {
   isOrganizer: boolean;
   organizerId: string | null;
   isOrganizerMode: boolean;
-  upcomingTrips: any[];
-  pastTrips: any[];
-  interestedTrips: any[];
   isLoading: boolean;
   setProfile: (profile: any) => void;
   setOrganizerId: (id: string) => void;
   setOrganizerMode: (mode: boolean) => void;
-  setTrips: (upcoming: any[], past: any[], interested: any[]) => void;
   setLoading: (loading: boolean) => void;
   clearUser: () => void;
 }
@@ -26,25 +22,18 @@ export const useUserStore = create<UserState>()(
       isOrganizer: false,
       organizerId: null,
       isOrganizerMode: false,
-      upcomingTrips: [],
-      pastTrips: [],
-      interestedTrips: [],
       isLoading: false,
 
-      setProfile: (profile) => set({
-        profile,
-        isOrganizer: profile?.is_organizer || false,
-      }),
+      setProfile: (profile) =>
+       set({
+           profile,
+           isOrganizer: profile?.is_organizer ?? false,
+           organizerId: profile?.organizer_id ?? null,
+       }),
 
       setOrganizerId: (id) => set({ organizerId: id, isOrganizer: true }),
 
       setOrganizerMode: (mode) => set({ isOrganizerMode: mode }),
-
-      setTrips: (upcoming, past, interested) => set({
-        upcomingTrips: upcoming,
-        pastTrips: past,
-        interestedTrips: interested,
-      }),
 
       setLoading: (loading) => set({ isLoading: loading }),
 
@@ -53,9 +42,6 @@ export const useUserStore = create<UserState>()(
         isOrganizer: false,
         organizerId: null,
         isOrganizerMode: false,
-        upcomingTrips: [],
-        pastTrips: [],
-        interestedTrips: [],
         isLoading: false,
       }),
     }),

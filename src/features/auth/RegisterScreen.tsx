@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 import { TYPOGRAPHY, SHAPES, SPACING } from '../../constants/theme';
 import { useAuthStore } from '../../store/authStore';
-import { api } from '../../services/api';
+import { authApi } from './api';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -35,7 +35,7 @@ export default function RegisterScreen() {
     setLoading(true);
     setError('');
     try {
-      const response = await api.register({ name, email, phone, password });
+      const response = await authApi.register({ name, email, phone, password });
       await setAuth(response.access_token, response.refresh_token || '');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to create account');

@@ -26,8 +26,9 @@ import { useTheme } from '../../../context/ThemeContext';
 import { TYPOGRAPHY, SHAPES, SPACING } from '../../../constants/theme';
 import { useAuthStore } from '../../../store/authStore';
 import { useUserStore } from '../../../store/userStore';
-import { api } from '../../../services/api';
+
 import { useProfile } from './hooks';
+import { profileApi } from './api';
 
 const Avatar = ({ name, colors }: { name?: string; colors: any }) => (
   <View style={[styles.avatarPlaceholder, { backgroundColor: colors.ternary }]}>
@@ -75,7 +76,7 @@ export default function TravellerProfileScreen() {
     setSwitching(true);
     try {
       if (!isOrganizer) {
-        const res = await api.becomeOrganizer();
+        const res = await profileApi.becomeOrganizer();
         setOrganizerId(res.data.organizer_id);
         await refetch();
       }
@@ -93,7 +94,7 @@ export default function TravellerProfileScreen() {
   };
 
   const handleLogout = async () => {
-    try { await api.logout(); } catch {}
+    try { await profileApi.logout(); } catch {}
     await logout();
   };
 

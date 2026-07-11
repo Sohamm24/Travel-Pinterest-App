@@ -9,7 +9,6 @@ import {
   Image,
   Dimensions,
   Animated,
-  Modal,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
@@ -18,14 +17,12 @@ import { useTheme } from '../../../context/ThemeContext';
 import { TYPOGRAPHY, SHAPES, SPACING } from '../../../constants/theme';
 import {
   ChevronLeft,
-  Bookmark,
+  ChevronDown,
   PersonStanding,
   Plus,
   Minus,
   BadgeCheck,
   Star,
-  Map as MapIcon,
-  X,
 } from 'lucide-react-native';
 import { useTripDetails, useToggleInterest } from './hooks';
 
@@ -38,6 +35,8 @@ const HEADER_ROW_HEIGHT = 44;
 const HEADER_FADE_DISTANCE = HERO_HEIGHT - HEADER_ROW_HEIGHT - STATUS_PADDING;
 
 const GEOAPIFY_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_KEY;
+
+const ITINERARY_PREVIEW_COUNT = 3;
 
 function formatDateRange(start?: string, end?: string) {
   if (!start) return null;
@@ -130,37 +129,10 @@ export default function TripDetailsScreen() {
   const { tripId } = route.params;
 
   const { data: trip, isLoading } = useTripDetails(tripId);
-  const toggleInterestMutation = useToggleInterest(tripId);
-
-  const [bookmarked, setBookmarked] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [itineraryModalVisible, setItineraryModalVisible] = useState(false);
+  const [itineraryExpanded, setItineraryExpanded] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const scrollY = useRef(new Animated.Value(0)).current;
-
-  const interested = trip?.is_interested ?? false;
-
-
-  const routeStops = useMemo(
-    () =>
-      (trip?.itinerary || []).filter(
-        (stop: any) =>
-          stop?.location &&
-          typeof stop.location.lat === 'number' &&
-          typeof stop.location.lng === 'number'
-      ),
-    [trip]
-  );
-
-  // TEMP DEBUG — remove once confirmed working (kept short on purpose)
-  useEffect(() => {
-    console.log('[routeMap] routeStops count:', routeStops.length);
-  }, [routeStops]);
-
-
-  const handleToggleInterest = () => {
-    toggleInterestMutation.mutate(interested);
-  };
 
   const onCarouselScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
@@ -236,8 +208,10 @@ export default function TripDetailsScreen() {
     endDay: lastItineraryDate?.getDate().toString() ?? '',
   };
 
-  const interestedCount = trip.interested_count ?? 0;
   const totalReviews = trip.organizer?.total_reviews ?? 0;
+
+  const itineraryList: any[] = trip.itinerary ?? [];
+  const visibleItinerary = itineraryExpanded ? itineraryList : itineraryList.slice(0, ITINERARY_PREVIEW_COUNT);
 
 
   return (
@@ -273,18 +247,6 @@ export default function TripDetailsScreen() {
           >
             {trip.title}
           </Animated.Text>
-
-          <TouchableOpacity onPress={() => setBookmarked((b) => !b)}>
-            <AnimatedHeaderIcon
-              IconCmp={Bookmark}
-              circleOpacity={iconCircleOpacity}
-              lightOpacity={iconLightOpacity}
-              darkOpacity={iconDarkOpacity}
-              colors={colors}
-              fillLight={bookmarked ? '#fff' : 'transparent'}
-              fillDark={bookmarked ? colors.primary : 'transparent'}
-            />
-          </TouchableOpacity>
         </View>
       </Animated.View>
 
@@ -329,27 +291,83 @@ export default function TripDetailsScreen() {
                 <Text style={[styles.statValueLg, { color: colors.textPrimary }]}>{trip.max_travellers - trip.confirmed_travellers}</Text>
               </View>
             </View>
+ 
+            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+              JOURNEY BREAKDOWN
+            </Text>
 
-            <View style={[styles.interestBanner, { backgroundColor: colors.dim }]}>
-              <View style={styles.interestBannerLeft}>
-                <Text style={[styles.interestBannerTitle, { color: colors.textPrimary }]}>To join discussion forum and get updates</Text>
-                {interestedCount > 0 && (
-                  <View style={styles.interestCountRow}>
-                    <View style={[styles.interestDot, { backgroundColor: colors.secondary }]} />
-                    <Text style={[styles.interestCountText, { color: colors.secondary }]}>{interestedCount} People are interested</Text>
+            <View style={styles.routeMapContainer}>
+              {visibleItinerary.map((stop: any, i: number) => (
+                <View key={i} style={styles.itineraryItem}>
+                  <View style={styles.itineraryTimelineCol}>
+                    <View style={[styles.itineraryDot, { backgroundColor: colors.secondary }]} />
+                    {i !== visibleItinerary.length - 1 && <View style={[styles.itineraryLine, { backgroundColor: colors.border }]} />}
                   </View>
-                )}
-              </View>
-              <TouchableOpacity
-                style={[styles.interestBtn, { backgroundColor: interested ? colors.secondary : colors.primary }]}
-                onPress={handleToggleInterest}
-              >
-                <Text style={[styles.interestBtnText, { color: colors.background }]}>Interested</Text>
-              </TouchableOpacity>
+                  <View style={styles.itineraryContent}>
+                    {stop.media ? (
+                      <Image
+                        source={{ uri: stop.media }}
+                        style={styles.itineraryImage}
+                        resizeMode="cover"
+                      />
+                    ) : null}
+
+                    <View style={{ paddingHorizontal: SPACING.md }}>
+                      <Text style={[styles.itineraryTime, { color: colors.textSecondary }]}>
+                        {stop.time
+                          ? new Date(stop.time).toLocaleString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : ''}
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.itineraryStopTitle,
+                          { color: colors.textPrimary },
+                        ]}
+                      >
+                        {stop.title}
+                      </Text>
+
+                      {stop.location?.name ? (
+                        <Text
+                          style={[
+                            styles.itineraryLocationName,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          {stop.location.name}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                </View>
+              ))}
+
+              {itineraryList.length > ITINERARY_PREVIEW_COUNT && (
+                <TouchableOpacity
+                  style={styles.viewItineraryBtn}
+                  onPress={() => setItineraryExpanded((v) => !v)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.viewItineraryBtnText, { color: colors.primary }]}>
+                    {itineraryExpanded ? 'View Less' : 'View More'}
+                  </Text>
+                  <ChevronDown
+                    color={colors.primary}
+                    size={16}
+                    style={{ transform: [{ rotate: itineraryExpanded ? '180deg' : '0deg' }] }}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
 
-            <View style={styles.organizerCard}>
-              <View style={styles.organizerLeft}>
+            <View style={[styles.interestBanner]}>
+               <View style={styles.organizerLeft}>
                 {trip.organizer?.profile_pic ? (
                   <Image source={{ uri: trip.organizer.profile_pic }} style={styles.organizerAvatar} />
                 ) : (
@@ -362,38 +380,22 @@ export default function TripDetailsScreen() {
                     <Text style={[styles.organizerRoleLabel, { color: colors.textSecondary }]}>{trip.organizer?.name}</Text>
                     <BadgeCheck color={colors.secondary} size={16} />
                   </View>
-                  {totalReviews >= 1 && (
-                    <View style={styles.organizerStatsRow}>
-                      <Star color="#F59E0B" fill="#F59E0B" size={13} />
-                      <Text style={[styles.organizerRating, { color: colors.textPrimary }]}>{trip.organizer?.average_rating ?? '4.8'}</Text>
-                      <Text style={[styles.organizerReviews, { color: colors.textSecondary }]}>( {totalReviews} Reviews )</Text>
-                    </View>
-                  )}
                 </View>
               </View>
               <TouchableOpacity
                 style={[styles.viewProfileBtn, { borderColor: colors.primary }]}
-                onPress={() => navigation.navigate('OrganizerPublicProfile', { organizerId: trip.organizer?.organizer_id })}
+                onPress={() =>
+                  navigation.navigate('ChatMessages', {
+                    organizerUserId: trip.organizer?.user_id ?? '',
+                    organizerName: trip.organizer?.name ?? 'Organizer',
+                    organizerPic: trip.organizer?.profile_pic ?? null,
+                    organizerProfileId: trip.organizer?.organizer_id ?? null,
+                    isVerified: trip.organizer?.verification_status ?? false,
+                  })
+                }
               >
-                <Text style={[styles.viewProfileText, { color: colors.primary }]}>View Profile</Text>
+                <Text style={[styles.viewProfileText, { color: colors.primary }]}>Message Organizer</Text>
               </TouchableOpacity>
-            </View>
-
-            <View style={styles.routeMapContainer}>
-              {(
-                <View style={[styles.routeMapPlaceholder, { backgroundColor: colors.dim }]} />
-              )}
-
-              {routeStops.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.viewItineraryBtn, { backgroundColor: colors.background }]}
-                  onPress={() => setItineraryModalVisible(true)}
-                  activeOpacity={0.85}
-                >
-                  <MapIcon color={colors.primary} size={14} />
-                  <Text style={[styles.viewItineraryBtnText, { color: colors.primary }]}>View Itinerary</Text>
-                </TouchableOpacity>
-              )}
             </View>
 
             <View style={[styles.sectionBlock, { borderTopColor: colors.border }]}>
@@ -428,81 +430,6 @@ export default function TripDetailsScreen() {
           <ChevronLeft color={colors.background} size={20} style={{ transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
       </View>
-
-      {/* Itinerary popup */}
-      <Modal
-        visible={itineraryModalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setItineraryModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Itinerary</Text>
-              <TouchableOpacity
-                style={[styles.modalCloseBtn, { backgroundColor: colors.dim }]}
-                onPress={() => setItineraryModalVisible(false)}
-              >
-                <X color={colors.textPrimary} size={18} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              {routeStops.map((stop: any, i: number) => (
-                <View key={i} style={styles.itineraryItem}>
-                  <View style={styles.itineraryTimelineCol}>
-                    <View style={[styles.itineraryDot, { backgroundColor: colors.secondary }]} />
-                    {i !== routeStops.length - 1 && <View style={[styles.itineraryLine, { backgroundColor: colors.border }]} />}
-                  </View>
-                  <View style={styles.itineraryContent}>
-                    {stop.media ? (
-                      <Image
-                        source={{ uri: stop.media }}
-                        style={styles.itineraryImage}
-                        resizeMode="cover"
-                      />
-                    ) : null}
-                  
-                   <View style={{paddingHorizontal:SPACING.md}}>
-                    <Text style={[styles.itineraryTime, { color: colors.textSecondary }]}>
-                      {stop.time
-                        ? new Date(stop.time).toLocaleString('en-IN', {
-                            day: '2-digit',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : ''}
-                    </Text>
-                  
-                    <Text
-                      style={[
-                        styles.itineraryStopTitle,
-                        { color: colors.textPrimary },
-                      ]}
-                    >
-                      {stop.title}
-                    </Text>
-                  
-                    {stop.location?.name ? (
-                      <Text
-                        style={[
-                          styles.itineraryLocationName,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        {stop.location.name}
-                      </Text>
-                    ) : null}
-                  </View>
-                </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -565,7 +492,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: SPACING.lg },
   title: { fontSize: TYPOGRAPHY.sizes.xl, fontFamily: TYPOGRAPHY.fontFamilyBold, marginBottom: SPACING.md, lineHeight: 30 },
 
-  statsRow: { flexDirection: 'row', borderRadius: SHAPES.roundedMedium, marginBottom: SPACING.md, overflow: 'hidden' },
+  statsRow: { flexDirection: 'row', borderRadius: SHAPES.roundedMedium, overflow: 'hidden' },
   statCell: { flex: 1, padding: SPACING.md, justifyContent: 'center', alignItems: 'center' },
   statBorderRight: { borderRightWidth: 1 },
   statLabel: { fontSize: TYPOGRAPHY.sizes.xs, fontFamily: TYPOGRAPHY.fontFamily, marginBottom: 6, textAlign: 'center' },
@@ -577,18 +504,18 @@ const styles = StyleSheet.create({
   dateChipMonth: { fontSize: 9, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
   dateChipDay: { fontSize: TYPOGRAPHY.sizes.sm, fontFamily: TYPOGRAPHY.fontFamilyBold },
 
-itineraryItem: {
-  flexDirection: 'row',
-  gap: SPACING.sm,
-  alignItems: 'flex-start'
-},
+  itineraryItem: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    alignItems: 'flex-start'
+  },
 
-itineraryImage: {
-  width: 50,
-  height: 50,
-  borderRadius: SHAPES.roundedMedium,
-},
-  interestBanner: { flexDirection: 'row', alignItems: 'center', borderRadius: SHAPES.roundedMedium, padding: SPACING.md, marginBottom: SPACING.md, gap: SPACING.md },
+  itineraryImage: {
+    width: 50,
+    height: 50,
+    borderRadius: SHAPES.roundedMedium,
+  },
+  interestBanner: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md, gap: SPACING.md },
   interestBannerLeft: { flex: 1, gap: 4 },
   interestBannerTitle: { fontSize: TYPOGRAPHY.sizes.xs, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
   interestCountRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -599,35 +526,37 @@ itineraryImage: {
 
   organizerCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.md },
   organizerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: SPACING.sm },
-  organizerAvatar: { width: 52, height: 52, borderRadius: 26 },
+  organizerAvatar: { width: 40, height: 40, borderRadius: 20 },
   organizerInitial: { fontSize: TYPOGRAPHY.sizes.lg, fontFamily: TYPOGRAPHY.fontFamilyBold },
   organizerInfo: { flex: 1, gap: 3 },
   organizerNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  organizerRoleLabel: { fontSize: TYPOGRAPHY.sizes.xs, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
+  organizerRoleLabel: { fontSize: TYPOGRAPHY.sizes.sm, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
   organizerStatsRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 3 },
   organizerRating: { fontSize: TYPOGRAPHY.sizes.xs, fontFamily: TYPOGRAPHY.fontFamilyBold },
   organizerReviews: { fontSize: TYPOGRAPHY.sizes.xs, fontFamily: TYPOGRAPHY.fontFamily },
-  viewProfileBtn: { borderWidth: 1, borderRadius: SHAPES.roundedSmall, paddingVertical: SPACING.xs + 2, paddingHorizontal: SPACING.md },
+  viewProfileBtn: { borderWidth: 0.5, borderRadius: SHAPES.roundedSmall, paddingVertical: SPACING.xs + 2, paddingHorizontal: SPACING.md },
   viewProfileText: { fontSize: TYPOGRAPHY.sizes.xs, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
 
-  routeMapContainer: { width: '100%', height: 200, borderRadius: SHAPES.roundedLarge, marginBottom: SPACING.lg, overflow: 'hidden', position: 'relative' },
+  // routeMapContainer now hosts the inline itinerary list (previously the
+  // map placeholder + "View Itinerary" button that opened a modal).
+  routeMapContainer: {
+    width: '100%',
+    borderRadius: SHAPES.roundedLarge,
+    paddingVertical: SPACING.md,
+  },
   routeMap: { width: '100%', height: '100%' },
   routeMapPlaceholder: { width: '100%', height: '100%' },
+  // toggle button for expanding/collapsing the itinerary list — no
+  // background colour, just text + chevron
   viewItineraryBtn: {
-    position: 'absolute',
-    top: SPACING.sm,
-    right: SPACING.sm,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
     gap: 6,
-    paddingVertical: SPACING.xs + 2,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xs,
     paddingHorizontal: SPACING.sm,
-    borderRadius: SHAPES.roundedSmall,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   viewItineraryBtnText: { fontSize: TYPOGRAPHY.sizes.xs, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
   routeLoadingPill: {
@@ -666,27 +595,15 @@ itineraryImage: {
   confirmBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg, borderRadius: SHAPES.roundedMedium },
   confirmBtnText: { fontFamily: TYPOGRAPHY.fontFamilyBold, fontSize: TYPOGRAPHY.sizes.md },
 
-  // ---- itinerary popup ----
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  modalCard: {
-    maxHeight: '75%',
-    borderTopLeftRadius: SHAPES.roundedLarge,
-    borderTopRightRadius: SHAPES.roundedLarge,
+  sectionLabel: {
+    fontSize: TYPOGRAPHY.sizes.xs,
+    fontFamily: TYPOGRAPHY.fontFamilySemiBold,
+    letterSpacing: 0.5,
+    paddingHorizontal: SPACING.xs,
     paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xl,
+    paddingBottom: SPACING.sm,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md,
-    borderBottomWidth: 1,
-    marginBottom: SPACING.md,
-  },
-  modalTitle: { fontSize: TYPOGRAPHY.sizes.lg, fontFamily: TYPOGRAPHY.fontFamilyBold },
-  modalCloseBtn: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  modalScroll: { paddingHorizontal: SPACING.lg },
+
   itineraryTimelineCol: { alignItems: 'center', width: 16 },
   itineraryDot: { width: 10, height: 10, borderRadius: 5, marginTop: 4 },
   itineraryLine: { flex: 1, width: 2, marginTop: 2, marginBottom: 2 },

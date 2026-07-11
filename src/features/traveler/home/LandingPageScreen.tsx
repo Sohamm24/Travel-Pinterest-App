@@ -12,6 +12,9 @@ import {
   ScrollView,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Image,
+  Animated,
+  Easing
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../../context/ThemeContext';
@@ -29,43 +32,44 @@ import TripCard from './components/TripCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const FILTER_PILLS = ['10-15 days', 'Solo Friendly', 'Host Accomodation', 'Budget', 'Weekend'];
-
 const HERO_SLIDES = [
   {
     headline: 'BETTER JOURNEYS\nSTART WITH…',
     features: [
-      { icon: <ShieldCheck color="#fff" size={22} />, label: 'Trusted Hosts' },
-      { icon: <Users color="#fff" size={22} />, label: 'Travel Safely' },
-      { icon: <PiggyBank color="#fff" size={22} />, label: 'Save More' },
-      { icon: <ClipboardList color="#fff" size={22} />, label: 'Hassle-Free\nPlanning' },
+      { icon: ShieldCheck, label: 'Trusted Hosts' },
+      { icon: Users, label: 'Travel Safely' },
+      { icon: PiggyBank, label: 'Save More' },
+      { icon: ClipboardList, label: 'Hassle-Free\nPlanning' },
     ],
   },
   {
     headline: 'EXPLORE THE\nUNEXPLORED',
     features: [
-      { icon: <ShieldCheck color="#fff" size={22} />, label: 'Verified Trips' },
-      { icon: <Users color="#fff" size={22} />, label: 'Community Led' },
-      { icon: <PiggyBank color="#fff" size={22} />, label: 'Best Prices' },
-      { icon: <ClipboardList color="#fff" size={22} />, label: 'Easy Booking' },
+      { icon: ShieldCheck , label: 'Verified Trips' },
+      { icon: Users , label: 'Community Led' },
+      { icon: PiggyBank , label: 'Best Prices' },
+      { icon: ClipboardList , label: 'Easy Booking' },
     ],
   },
 ];
 
 const CATEGORIES = [
-  { key: 'all', label: 'Travel (All)', emoji: '🧭' },
-  { key: 'beach', label: 'Beach', emoji: '🏖️' },
-  { key: 'hill', label: 'Hill Station', emoji: '⛰️' },
-  { key: 'trek', label: 'Trekking', emoji: '🥾' },
-  { key: 'bike', label: 'Bike Riders', emoji: '🏍️' },
-  { key: 'heritage', label: 'Heritage', emoji: '🏛️' },
-  { key: 'safari', label: 'Safari', emoji: '🦒' },
-  { key: 'city', label: 'City tour', emoji: '🌆' },
+  { key: 'all', label: 'Travel (All)', image: require('../../../../assets/all.jpeg') },
+  { key: 'beach', label: 'Beach', image: require('../../../../assets/beach.jpeg') },
+  { key: 'hill', label: 'Hill Station', image: require('../../../../assets/hill-station.jpeg') },
+  { key: 'city', label: 'City tour', image: require('../../../../assets/cities.jpeg') },
+  { key: 'camping', label: 'Camping', image: require('../../../../assets/camping.jpeg') },
+  { key: 'trek', label: 'Trekking', image: require('../../../../assets/trekking.jpeg') },
+  { key: 'heritage', label: 'Heritage', image: require('../../../../assets/spiritual.jpeg') },
+  { key: 'star-gazing', label: 'Star Gazing', image: require('../../../../assets/star-gazing.jpeg') },
 ];
 
-function HeroBanner({ colors }: { colors: any }) {
+function HeroBanner() {
   const scrollRef = useRef<ScrollView>(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const { colors } = useTheme();
+
+  // Background bubbles are static
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -81,8 +85,25 @@ function HeroBanner({ colors }: { colors: any }) {
     setActiveSlide(idx);
   };
 
+  // Static bubble styling is inline below
+
   return (
-    <View style={[heroStyles.wrapper, { backgroundColor: colors.primary }]}>
+    <View style={[heroStyles.wrapper, { backgroundColor: colors.banner }]}>
+      <View
+        pointerEvents="none"
+        style={[
+          heroStyles.bubbleTopLeft,
+          { backgroundColor: colors.ternary, opacity: 0.4, transform: [{ scale: 1.0 }] },
+        ]}
+      />
+      <View
+        pointerEvents="none"
+        style={[
+          heroStyles.bubbleBottomRight,
+          { backgroundColor: colors.ternary, opacity: 0.4, transform: [{ scale: 1.0 }] },
+        ]}
+      />
+
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -93,24 +114,55 @@ function HeroBanner({ colors }: { colors: any }) {
       >
         {HERO_SLIDES.map((slide, i) => (
           <View key={i} style={[heroStyles.slide, { width: SCREEN_WIDTH }]}>
-            <Text style={[heroStyles.headline, { color: COLORS.bannerText }]}>{slide.headline}</Text>
+            <Text style={[heroStyles.headline, { color: colors.bannerText }]}>
+              {slide.headline}
+            </Text>
             <View style={heroStyles.featuresRow}>
-              {slide.features.map((f, fi) => (
-                <React.Fragment key={fi}>
-                  {fi > 0 && <View style={heroStyles.featureDivider} />}
-                  <View style={heroStyles.featureItem}>
-                    {f.icon}
-                    <Text style={heroStyles.featureLabel}>{f.label}</Text>
-                  </View>
-                </React.Fragment>
-              ))}
+              {slide.features.map((f, fi) => {
+                const Icon = f.icon;
+              
+                return (
+                  <React.Fragment key={fi}>
+                    {fi > 0 && (
+                      <View
+                        style={[
+                          heroStyles.featureDivider,
+                          { backgroundColor: colors.textPrimary },
+                        ]}
+                      />
+                    )}
+              
+                    <View style={heroStyles.featureItem}>
+                      <Icon color={colors.textPrimary} size={22} />
+                      <Text
+                        style={[
+                          heroStyles.featureLabel,
+                          { color: colors.textPrimary },
+                        ]}
+                      >
+                        {f.label}
+                      </Text>
+                    </View>
+                  </React.Fragment>
+                );
+              })}
             </View>
           </View>
         ))}
       </ScrollView>
       <View style={heroStyles.dots}>
         {HERO_SLIDES.map((_, i) => (
-          <View key={i} style={[heroStyles.dot, i === activeSlide && heroStyles.dotActive]} />
+          <View
+            key={i}
+            style={[
+              heroStyles.dot,
+              { backgroundColor: colors.primaryDim },
+              i === activeSlide && [
+                heroStyles.dotActive,
+                { backgroundColor: colors.secondary },
+              ],
+            ]}
+          />
         ))}
       </View>
     </View>
@@ -118,10 +170,26 @@ function HeroBanner({ colors }: { colors: any }) {
 }
 
 const heroStyles = StyleSheet.create({
-  wrapper: { paddingBottom: SPACING.lg },
+  wrapper: {
+    paddingBottom: SPACING.lg,
+  },
+  bubbleTopLeft: {
+    position: 'absolute',
+    top: -30,
+    left: -30,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+  bubbleBottomRight: {
+    position: 'absolute',
+    bottom: -30,
+    right: -30,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+  },
   slide: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
     paddingBottom: SPACING.md,
     alignItems: 'center',
   },
@@ -146,14 +214,12 @@ const heroStyles = StyleSheet.create({
   featureLabel: {
     fontSize: 10,
     fontFamily: TYPOGRAPHY.fontFamilySemiBold,
-    color: '#fff',
     textAlign: 'center',
     lineHeight: 13,
   },
   featureDivider: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(255,255,255,0.25)',
     marginTop: 4,
   },
   dots: {
@@ -166,10 +232,8 @@ const heroStyles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.4)',
   },
   dotActive: {
-    backgroundColor: '#fff',
     width: 20,
   },
 });
@@ -183,7 +247,7 @@ function CategoryGrid({
   onSelect: (key: string) => void;
   colors: any;
 }) {
-  const TILE_SIZE = (SCREEN_WIDTH - SPACING.lg * 2 - SPACING.sm * 3) / 4;
+  const TILE_SIZE = 90;
   const rows = [CATEGORIES.slice(0, 4), CATEGORIES.slice(4, 8)];
 
   return (
@@ -202,11 +266,14 @@ function CategoryGrid({
                 <View
                   style={[
                     catStyles.tile,
-                    { backgroundColor: colors.dim, width: TILE_SIZE, height: TILE_SIZE },
+                    { width: TILE_SIZE, height: TILE_SIZE },
                     isActive && { borderWidth: 2, borderColor: colors.secondary },
                   ]}
                 >
-                  <Text style={{ fontSize: TILE_SIZE * 0.42 }}>{cat.emoji}</Text>
+                  <Image
+                    source={cat.image}
+                    resizeMode="contain"
+                  />
                 </View>
                 <Text
                   style={[
@@ -242,6 +309,7 @@ const catStyles = StyleSheet.create({
   },
   tile: {
     borderRadius: SHAPES.roundedMedium,
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -268,56 +336,16 @@ export default function LandingPageScreen() {
 
   const renderHeader = () => (
     <>
-      <View style={[styles.topBar, { backgroundColor: colors.primary }]}>
-        <Text style={[styles.logoText, { color: colors.secondary }]}>T</Text>
-        <TouchableOpacity
-          style={[styles.searchBar, { backgroundColor: colors.background }]}
-          onPress={() => navigation.navigate('Search')}
-          activeOpacity={0.8}
-        >
-          <Search color={colors.textSecondary} size={16} />
-          <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>
-            Find your next destination
-          </Text>
-        </TouchableOpacity>
+      <View style={[styles.topBar, { backgroundColor: colors.banner }]}>
+        <Image 
+                 source={require('../../../../assets/logo-header.png')} 
+                 style={styles.logo} 
+                 resizeMode='contain'
+                 />
       </View>
 
-      <HeroBanner colors={colors} />
+      <HeroBanner/>
       <CategoryGrid activeCategory={activeCategory} onSelect={handleCategorySelect} colors={colors} />
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-        style={styles.filterScroll}
-      >
-        <TouchableOpacity style={[styles.filterPill, { borderColor: colors.border, backgroundColor: colors.background }]}>
-          <Text style={[styles.filterText, { color: colors.textSecondary }]}>Filters</Text>
-          <ChevronDown color={colors.textSecondary} size={13} />
-        </TouchableOpacity>
-
-        {FILTER_PILLS.map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[
-              styles.filterPill,
-              { borderColor: colors.border, backgroundColor: colors.background },
-              activeFilter === item && { backgroundColor: colors.secondary, borderColor: colors.secondary },
-            ]}
-            onPress={() => setActiveFilter(activeFilter === item ? null : item)}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                { color: colors.textSecondary },
-                activeFilter === item && { color: colors.background },
-              ]}
-            >
-              {item}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
 
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
         SHOWING TRIPS STARTING NEAR YOU
@@ -369,6 +397,7 @@ export default function LandingPageScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  logo: { width: 80, height: 80,},
   listContent: { paddingBottom: SPACING.xl },
   topBar: {
     flexDirection: 'row',
@@ -420,7 +449,7 @@ const styles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.fontFamilySemiBold,
     letterSpacing: 0.5,
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.sm,
+    paddingTop: SPACING.lg,
     paddingBottom: SPACING.sm,
   },
   emptyContainer: { alignItems: 'center', paddingTop: SPACING.xl * 3 },

@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Calendar, Clock } from 'lucide-react-native';
+import type { UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY } from '../../../../constants/theme';
+import type { CreateTripFormValues } from '../types';
 
-// ─── Shared picker helpers (same pattern as Step-2) ──────────────────────────
+interface Props {
+  watch: UseFormWatch<CreateTripFormValues>;
+  setValue: UseFormSetValue<CreateTripFormValues>;
+}
+
+// ─── Picker constants ──────────────────────────────────────────────────────
+
 const MONTHS   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const HOURS    = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES  = ['00', '15', '30', '45'];
+
+// ─── Date picker modal ─────────────────────────────────────────────────────
 
 function DatePickerModal({ visible, onConfirm, onCancel, colors }: any) {
   const today = new Date();
@@ -66,6 +76,8 @@ function DatePickerModal({ visible, onConfirm, onCancel, colors }: any) {
   );
 }
 
+// ─── Time picker modal ─────────────────────────────────────────────────────
+
 function TimePickerModal({ visible, onConfirm, onCancel, colors }: any) {
   const [hour, setHour]     = useState('06');
   const [minute, setMinute] = useState('00');
@@ -97,8 +109,7 @@ function TimePickerModal({ visible, onConfirm, onCancel, colors }: any) {
             <TouchableOpacity onPress={onCancel} style={[dp.cancelBtn, { borderColor: '#E5E7EB' }]}>
               <Text style={{ color: colors.textSecondary, fontFamily: TYPOGRAPHY.fontFamilySemiBold }}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => onConfirm(`${hour}:${minute}`)}
+            <TouchableOpacity onPress={() => onConfirm(`${hour}:${minute}`)}
               style={[dp.confirmBtn, { backgroundColor: colors.primary }]}>
               <Text style={{ color: '#fff', fontFamily: TYPOGRAPHY.fontFamilySemiBold }}>Done</Text>
             </TouchableOpacity>
@@ -110,20 +121,21 @@ function TimePickerModal({ visible, onConfirm, onCancel, colors }: any) {
 }
 
 const dp = StyleSheet.create({
-  overlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
-  sheet:    { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 },
-  title:    { fontSize: 16, fontFamily: TYPOGRAPHY.fontFamilyBold, textAlign: 'center', marginBottom: 16 },
-  wheelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 180 },
-  wheel:    { flex: 1, maxHeight: 180 },
-  item:     { paddingVertical: 10, paddingHorizontal: 8, borderRadius: 8, alignItems: 'center' },
-  itemText: { fontSize: 15, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
-  colon:    { fontSize: 22, fontFamily: TYPOGRAPHY.fontFamilyBold, marginBottom: 4 },
-  actions:  { flexDirection: 'row', gap: 12, marginTop: 20 },
-  cancelBtn:  { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  confirmBtn: { flex: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
+  sheet:     { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 },
+  title:     { fontSize: 16, fontFamily: TYPOGRAPHY.fontFamilyBold, textAlign: 'center', marginBottom: 16 },
+  wheelRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 180 },
+  wheel:     { flex: 1, maxHeight: 180 },
+  item:      { paddingVertical: 10, paddingHorizontal: 8, borderRadius: 8, alignItems: 'center' },
+  itemText:  { fontSize: 15, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
+  colon:     { fontSize: 22, fontFamily: TYPOGRAPHY.fontFamilyBold, marginBottom: 4 },
+  actions:   { flexDirection: 'row', gap: 12, marginTop: 20 },
+  cancelBtn: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  confirmBtn:{ flex: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
 });
 
-// ─── Tap-to-open date & time fields ──────────────────────────────────────────
+// ─── Tap-to-open field components ──────────────────────────────────────────
+
 function DateTapField({ label, value, onChange, colors }: any) {
   const [open, setOpen] = useState(false);
   return (
@@ -139,7 +151,9 @@ function DateTapField({ label, value, onChange, colors }: any) {
           {value || 'DD Mon YYYY'}
         </Text>
       </TouchableOpacity>
-      <DatePickerModal visible={open} onConfirm={(v: string) => { onChange(v); setOpen(false); }} onCancel={() => setOpen(false)} colors={colors} />
+      <DatePickerModal visible={open}
+        onConfirm={(v: string) => { onChange(v); setOpen(false); }}
+        onCancel={() => setOpen(false)} colors={colors} />
     </View>
   );
 }
@@ -159,12 +173,15 @@ function TimeTapField({ label, value, onChange, colors }: any) {
           {value || 'HH : MM'}
         </Text>
       </TouchableOpacity>
-      <TimePickerModal visible={open} onConfirm={(v: string) => { onChange(v); setOpen(false); }} onCancel={() => setOpen(false)} colors={colors} />
+      <TimePickerModal visible={open}
+        onConfirm={(v: string) => { onChange(v); setOpen(false); }}
+        onCancel={() => setOpen(false)} colors={colors} />
     </View>
   );
 }
 
-// ─── Generic text field ───────────────────────────────────────────────────────
+// ─── Text field with optional prefix ──────────────────────────────────────
+
 function PricingField({ label, value, onChangeText, placeholder, prefix, keyboardType, colors }: any) {
   return (
     <View style={s.fieldWrapper}>
@@ -184,23 +201,31 @@ function PricingField({ label, value, onChangeText, placeholder, prefix, keyboar
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-export default function Step4Pricing({ formData, setFormData }: any) {
+// ─── Main component ────────────────────────────────────────────────────────
+
+export default function Step4Pricing({ watch, setValue }: Props) {
   const { colors } = useTheme();
+
+  const maxTravellers     = watch('maxTravellers');
+  const budget            = watch('budget');
+  const confirmationAmount= watch('confirmationAmount');
+  const confirmLastByDate = watch('confirmLastByDate');
+  const confirmLastByTime = watch('confirmLastByTime');
+
   return (
     <View style={s.container}>
       <PricingField
         label="TOTAL SEATS"
-        value={formData.maxTravellers}
-        onChangeText={(t: string) => setFormData({ ...formData, maxTravellers: t })}
-        placeholder="number of seats available in the trip planning"
+        value={maxTravellers}
+        onChangeText={(t: string) => setValue('maxTravellers', t)}
+        placeholder="number of seats available in the trip"
         keyboardType="numeric"
         colors={colors}
       />
       <PricingField
         label="TRIP BUDGET PER PERSON"
-        value={formData.budget}
-        onChangeText={(t: string) => setFormData({ ...formData, budget: t })}
+        value={budget}
+        onChangeText={(t: string) => setValue('budget', t)}
         placeholder=""
         prefix="₹"
         keyboardType="numeric"
@@ -208,31 +233,30 @@ export default function Step4Pricing({ formData, setFormData }: any) {
       />
       <PricingField
         label="PRICE TO CONFIRM THE TRIP"
-        value={formData.confirmationAmount}
-        onChangeText={(t: string) => setFormData({ ...formData, confirmationAmount: t })}
+        value={confirmationAmount}
+        onChangeText={(t: string) => setValue('confirmationAmount', t)}
         placeholder=""
         prefix="₹"
         keyboardType="numeric"
         colors={colors}
       />
 
-      {/* Confirm Trip Last By — modern date+time pickers */}
       <View style={s.groupWrapper}>
         <Text style={[s.fieldLabel, { color: colors.textPrimary }]}>CONFIRM TRIP LAST BY</Text>
         <View style={s.row}>
           <View style={{ flex: 1 }}>
             <DateTapField
               label="Date"
-              value={formData.confirmLastByDate}
-              onChange={(v: string) => setFormData({ ...formData, confirmLastByDate: v })}
+              value={confirmLastByDate}
+              onChange={(v: string) => setValue('confirmLastByDate', v)}
               colors={colors}
             />
           </View>
           <View style={{ flex: 1 }}>
             <TimeTapField
               label="Time"
-              value={formData.confirmLastByTime}
-              onChange={(v: string) => setFormData({ ...formData, confirmLastByTime: v })}
+              value={confirmLastByTime}
+              onChange={(v: string) => setValue('confirmLastByTime', v)}
               colors={colors}
             />
           </View>
@@ -242,19 +266,18 @@ export default function Step4Pricing({ formData, setFormData }: any) {
   );
 }
 
+// ─── Styles ────────────────────────────────────────────────────────────────
+
 const s = StyleSheet.create({
   container:    { gap: 20 },
   groupWrapper: { gap: 8 },
   fieldWrapper: { gap: 5 },
   fieldLabel:   { fontSize: 12, fontFamily: TYPOGRAPHY.fontFamilyBold, letterSpacing: 0.8, textTransform: 'uppercase' },
   subLabel:     { fontSize: 13, fontFamily: TYPOGRAPHY.fontFamily },
-
-  inputRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 14, gap: 6 },
-  prefix:   { fontSize: 22, fontFamily: TYPOGRAPHY.fontFamilyBold },
-  input:    { flex: 1, fontSize: 15, fontFamily: TYPOGRAPHY.fontFamily, padding: 0 },
-
-  tapField: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11 },
-  tapText:  { fontSize: 14, fontFamily: TYPOGRAPHY.fontFamily, flex: 1 },
-
-  row: { flexDirection: 'row', gap: 12 },
+  inputRow:     { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 14, gap: 6 },
+  prefix:       { fontSize: 22, fontFamily: TYPOGRAPHY.fontFamilyBold },
+  input:        { flex: 1, fontSize: 15, fontFamily: TYPOGRAPHY.fontFamily, padding: 0 },
+  tapField:     { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11 },
+  tapText:      { fontSize: 14, fontFamily: TYPOGRAPHY.fontFamily, flex: 1 },
+  row:          { flexDirection: 'row', gap: 12 },
 });

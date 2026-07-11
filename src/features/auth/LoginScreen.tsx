@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 import { TYPOGRAPHY, SHAPES, SPACING } from '../../constants/theme';
 import { useAuthStore } from '../../store/authStore';
-import { api } from '../../services/api';
+import { authApi } from './api';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -32,7 +32,7 @@ export default function LoginScreen() {
     setLoading(true);
     setError('');
     try {
-      const response = await api.login({ email, password });
+      const response = await authApi.login({ email, password });
       await setAuth(response.access_token, response.refresh_token || '');
     } catch (err: any) {
       setError('Invalid email or password');

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../services/api';
+import { profileApi } from './api';
 import { useUserStore } from '../../../store/userStore';
 
 export function useProfile() {
@@ -8,7 +8,7 @@ export function useProfile() {
   return useQuery({
     queryKey: ['my_profile'],
     queryFn: async () => {
-      const user = await api.getMe();
+      const user = await profileApi.getMe();
       setProfile(user);
       return user;
     },
@@ -23,8 +23,8 @@ export function useTripHistory() {
     queryKey: ['my_trip_history'],
     queryFn: async () => {
       const [upcoming, past] = await Promise.allSettled([
-        api.getUpcomingTrips(),
-        api.getPastTrips(),
+        profileApi.getUpcomingTrips(),
+        profileApi.getPastTrips(),
       ]);
       return {
         upcoming: upcoming.status === 'fulfilled' ? upcoming.value : [],

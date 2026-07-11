@@ -13,45 +13,24 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { PlusCircle, XCircle, Calendar, Clock, X } from 'lucide-react-native';
+import { PlusCircle, XCircle, Calendar, Clock } from 'lucide-react-native';
+import type { UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TYPOGRAPHY } from '../../../../constants/theme';
 import { uploadMedia } from './Upload-media';
+import type { CreateTripFormValues, ItineraryItem } from '../types';
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ─── Props ─────────────────────────────────────────────────────────────────
 
-/**
- * Shape stored locally in formData.itinerary[].
- * Keeps UI-friendly date/time strings separate so the pickers work normally.
- * The backend payload is assembled in buildApiPayload() below.
- */
-interface ItineraryItem {
-  id: string;
-  title: string;
-  location: string;       // plain string for the text field
-  date: string;           // "DD Mon YYYY" – UI only
-  time: string;           // "HH:MM"       – UI only
-  image: string | null;   // local preview URI or CDN URL
-  imagePath: string | null; // confirmed bucket path → sent as `media`
-  imageUploading?: boolean;
+interface Props {
+  watch: UseFormWatch<CreateTripFormValues>;
+  setValue: UseFormSetValue<CreateTripFormValues>;
+  tripId: string | null;
 }
 
-/**
- * Matches backend ItineraryActivity / LocationModel.
- * Sent to PATCH /{trip_id}/step2 inside { itinerary: [...] }.
- */
-interface ItineraryActivityPayload {
-  title: string;
-  location: { name: string };   // LocationModel
-  time: string;                 // ISO-8601 datetime string
-  media: string;                // bucket path (imagePath)
-}
+// ─── Payload builder (called by parent on Next) ────────────────────────────
 
-/**
- * Converts the UI-friendly list into the shape the backend expects.
- * Call this right before the API request.
- */
-export function buildStep2Payload(items: ItineraryItem[]): { itinerary: ItineraryActivityPayload[] } {
+export function buildStep2Payload(items: ItineraryItem[]) {
   return {
     itinerary: items.map((item) => ({
       title: item.title,
@@ -62,18 +41,15 @@ export function buildStep2Payload(items: ItineraryItem[]): { itinerary: Itinerar
   };
 }
 
-/** "DD Mon YYYY" + "HH:MM"  →  ISO-8601 string, e.g. "2025-12-25T06:00:00.000Z" */
 function toIsoDateTime(dateStr: string, timeStr: string): string {
-  // dateStr: "25 Dec 2025", timeStr: "06:00"
   if (!dateStr || !timeStr) return new Date().toISOString();
-  const combined = `${dateStr} ${timeStr}`; // "25 Dec 2025 06:00"
-  const parsed = new Date(combined);
+  const parsed = new Date(`${dateStr} ${timeStr}`);
   return isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
 }
 
-// ── Date / Time pickers ────────────────────────────────────────────────────
+// ─── Date / Time pickers ───────────────────────────────────────────────────
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const HOURS   = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = ['00', '15', '30', '45'];
 
@@ -190,7 +166,7 @@ const dp = StyleSheet.create({
   confirmBtn:{ flex: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
 });
 
-// ── Reusable field components ──────────────────────────────────────────────
+// ─── Reusable field components ─────────────────────────────────────────────
 
 function TextField({ label, value, onChangeText, placeholder, colors }: any) {
   return (
@@ -241,7 +217,7 @@ function TimeField({ label, value, onChange, colors }: any) {
   );
 }
 
-// ── Itinerary image upload area ────────────────────────────────────────────
+// ─── Itinerary image picker ────────────────────────────────────────────────
 
 function ItineraryImagePicker({
   image, imageUploading, imageFailed, onPick, colors,
@@ -253,11 +229,7 @@ function ItineraryImagePicker({
   colors: any;
 }) {
   return (
-    <TouchableOpacity
-      style={[s.uploadArea, { backgroundColor: '#F3F4F6' }]}
-      onPress={onPick}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={[s.uploadArea, { backgroundColor: '#F3F4F6' }]} onPress={onPick} activeOpacity={0.7}>
       {image ? (
         <>
           <Image source={{ uri: image }} style={s.uploadPreview} />
@@ -282,7 +254,7 @@ function ItineraryImagePicker({
   );
 }
 
-// ── Itinerary card (summary row) ───────────────────────────────────────────
+// ─── Itinerary card (summary row) ─────────────────────────────────────────
 
 function ItineraryCard({ item, onRemove, colors }: { item: ItineraryItem; onRemove: () => void; colors: any }) {
   return (
@@ -315,7 +287,7 @@ function ItineraryCard({ item, onRemove, colors }: { item: ItineraryItem; onRemo
   );
 }
 
-// ── Main Step 2 component ──────────────────────────────────────────────────
+// ─── Draft state for the add-new form ─────────────────────────────────────
 
 const EMPTY_DRAFT = {
   title: '',
@@ -325,13 +297,17 @@ const EMPTY_DRAFT = {
   image: null as string | null,
   imagePath: null as string | null,
   imageUploading: false,
+  _slotId: '',
 };
 
-export default function Step2Itinerary({ formData, setFormData, tripId }: any) {
+// ─── Main Step 2 component ─────────────────────────────────────────────────
+
+export default function Step2Itinerary({ watch, setValue, tripId }: Props) {
   const { colors } = useTheme();
   const [draft, setDraft] = useState(EMPTY_DRAFT);
 
-  // ── Image pick + upload for the draft being composed ──
+  const itinerary = watch('itinerary');
+
   const handlePickDraftImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -349,9 +325,9 @@ export default function Step2Itinerary({ formData, setFormData, tripId }: any) {
     if (result.canceled || !result.assets?.[0]) return;
 
     const localUri = result.assets[0].uri;
+    const slotId = Date.now().toString();
 
-    // Instant local preview
-    setDraft((prev) => ({ ...prev, image: localUri, imagePath: null, imageUploading: true }));
+    setDraft((p) => ({ ...p, image: localUri, imagePath: null, imageUploading: true, _slotId: slotId }));
 
     try {
       const compressed = await ImageManipulator.manipulateAsync(
@@ -359,8 +335,6 @@ export default function Step2Itinerary({ formData, setFormData, tripId }: any) {
         [{ resize: { width: 900 } }],
         { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
       );
-
-      const slotId = Date.now().toString();
 
       const { filePath, publicUrl } = await uploadMedia({
         localUri: compressed.uri,
@@ -370,23 +344,17 @@ export default function Step2Itinerary({ formData, setFormData, tripId }: any) {
         itinerarySlot: slotId,
       });
 
-      setDraft((prev) => ({
-        ...prev,
-        image: publicUrl,
-        imagePath: filePath,   // ← this becomes `media` in the API payload
-        imageUploading: false,
-        _slotId: slotId,
-      } as any));
+      setDraft((p) => ({ ...p, image: publicUrl, imagePath: filePath, imageUploading: false }));
     } catch {
       Alert.alert('Upload failed', 'Image could not be uploaded. You can still add the item and retry.');
-      setDraft((prev) => ({ ...prev, imageUploading: false }));
+      setDraft((p) => ({ ...p, imageUploading: false }));
     }
   };
 
   const handleAdd = () => {
     if (!draft.title.trim()) return;
     const newItem: ItineraryItem = {
-      id: (draft as any)._slotId || Date.now().toString(),
+      id: draft._slotId || Date.now().toString(),
       title: draft.title,
       location: draft.location,
       date: draft.date,
@@ -395,26 +363,20 @@ export default function Step2Itinerary({ formData, setFormData, tripId }: any) {
       imagePath: draft.imagePath,
       imageUploading: draft.imageUploading,
     };
-    setFormData((prev: any) => ({
-      ...prev,
-      itinerary: [...(prev.itinerary ?? []), newItem],
-    }));
+    setValue('itinerary', [...(itinerary ?? []), newItem]);
     setDraft(EMPTY_DRAFT);
   };
 
   const handleRemove = (id: string) =>
-    setFormData((prev: any) => ({
-      ...prev,
-      itinerary: prev.itinerary.filter((i: ItineraryItem) => i.id !== id),
-    }));
+    setValue('itinerary', (itinerary ?? []).filter((i) => i.id !== id));
 
   return (
     <View style={s.container}>
       {/* Existing items */}
-      {(formData.itinerary ?? []).length > 0 && (
+      {(itinerary ?? []).length > 0 && (
         <View style={s.section}>
           <Text style={[s.sectionLabel, { color: colors.textPrimary }]}>ITINERARY</Text>
-          {formData.itinerary.map((item: ItineraryItem) => (
+          {itinerary.map((item) => (
             <ItineraryCard key={item.id} item={item} colors={colors} onRemove={() => handleRemove(item.id)} />
           ))}
         </View>
@@ -463,27 +425,29 @@ export default function Step2Itinerary({ formData, setFormData, tripId }: any) {
   );
 }
 
+// ─── Styles ────────────────────────────────────────────────────────────────
+
 const s = StyleSheet.create({
   container:    { gap: 16 },
   section:      { gap: 10 },
   sectionLabel: { fontSize: 12, fontFamily: TYPOGRAPHY.fontFamilyBold, letterSpacing: 0.8, textTransform: 'uppercase' },
 
-  card:             { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 10, padding: 10 },
-  cardImg:          { width: 72, height: 56, borderRadius: 8 },
+  card:              { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 10, padding: 10 },
+  cardImg:           { width: 72, height: 56, borderRadius: 8 },
   cardImgPlaceholder:{ width: 72, height: 56, borderRadius: 8 },
-  cardInfo:         { flex: 1, gap: 3 },
-  cardTitle:        { fontSize: 14, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
-  cardDateRow:      { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot:              { width: 8, height: 8, borderRadius: 4 },
-  cardMeta:         { fontSize: 12, fontFamily: TYPOGRAPHY.fontFamily },
+  cardInfo:          { flex: 1, gap: 3 },
+  cardTitle:         { fontSize: 14, fontFamily: TYPOGRAPHY.fontFamilySemiBold },
+  cardDateRow:       { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot:               { width: 8, height: 8, borderRadius: 4 },
+  cardMeta:          { fontSize: 12, fontFamily: TYPOGRAPHY.fontFamily },
 
-  addForm:    { borderWidth: 1, borderRadius: 12, padding: 16, gap: 14 },
+  addForm:     { borderWidth: 1, borderRadius: 12, padding: 16, gap: 14 },
   fieldWrapper:{ gap: 5 },
-  fieldLabel: { fontSize: 13, fontFamily: TYPOGRAPHY.fontFamily },
-  textField:  { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, fontFamily: TYPOGRAPHY.fontFamily },
-  pickerField:{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: '#FAFAFA' },
-  pickerText: { fontSize: 14, fontFamily: TYPOGRAPHY.fontFamily, flex: 1 },
-  row:        { flexDirection: 'row', gap: 12 },
+  fieldLabel:  { fontSize: 13, fontFamily: TYPOGRAPHY.fontFamily },
+  textField:   { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, fontFamily: TYPOGRAPHY.fontFamily },
+  pickerField: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11, backgroundColor: '#FAFAFA' },
+  pickerText:  { fontSize: 14, fontFamily: TYPOGRAPHY.fontFamily, flex: 1 },
+  row:         { flexDirection: 'row', gap: 12 },
 
   uploadArea:       { borderRadius: 10, height: 110, justifyContent: 'center', alignItems: 'center', gap: 8, overflow: 'hidden' },
   uploadPreview:    { width: '100%', height: '100%', borderRadius: 10 },

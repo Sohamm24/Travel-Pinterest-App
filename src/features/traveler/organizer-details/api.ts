@@ -1,6 +1,15 @@
-import { api } from '../../../services/api';
+/**
+ * features/traveler/organizer-details/api.ts
+ *
+ * API calls for the organizer detail page.
+ */
+
+import { client } from '../../../utils/apiClient';
 
 export const organizerDetailsApi = {
-  getOrganizer: (id: string) => api.getOrganizer(id),
-  getOrganizerTrips: (id: string, params?: any) => api.listTrips({ organizer_id: id, ...params }),
+  getOrganizer: (id: string) =>
+    client.get(`/api/v1/organizers/${id}`).then((r) => r.data),
+
+  getOrganizerTrips: (id: string, params?: any) =>
+    client.get('/api/v1/trips/', { params: { organizer_id: id, ...params } }).then((r) => r.data),
 };

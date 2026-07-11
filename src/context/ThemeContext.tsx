@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import { useColorScheme } from 'react-native';
 import { lightColors, darkColors, type ColorPalette } from '../constants/colors';
-import { getStoredTheme, saveTheme } from '../services/storage';
+import { getStoredTheme, saveTheme } from '../store/storage';
 
 interface ThemeContextValue {
   theme: 'light' | 'dark';
