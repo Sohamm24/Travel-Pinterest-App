@@ -1140,15 +1140,6 @@
     dotenv-expand "~11.0.6"
     getenv "^2.0.0"
 
-"@expo/env@~2.4.1":
-  version "2.4.1"
-  resolved "https://registry.yarnpkg.com/@expo/env/-/env-2.4.1.tgz#1621c55a48e285b825b788bc4d60cd16333e667e"
-  integrity sha512-3c9Mg9x0HmGPEsVrGAGyEDJsNUOZ55cZvZ47/HLmXh7MHV9Zv7My73wThklKrObaBBoMfE4YqpKjYKDRzojpjQ==
-  dependencies:
-    chalk "^4.0.0"
-    debug "^4.3.4"
-    getenv "^2.0.0"
-
 "@expo/fingerprint@0.15.5":
   version "0.15.5"
   resolved "https://registry.npmjs.org/@expo/fingerprint/-/fingerprint-0.15.5.tgz"
@@ -3754,13 +3745,6 @@ expo-constants@~18.0.13:
     "@expo/config" "~12.0.13"
     "@expo/env" "~2.0.8"
 
-expo-constants@~57.0.3:
-  version "57.0.3"
-  resolved "https://registry.yarnpkg.com/expo-constants/-/expo-constants-57.0.3.tgz#ca226539ffaa46459b5de1cd9f59062275de2a4b"
-  integrity sha512-BghbZlzwFnA22BG0CWv6W29zx8w19FozYPfSeZ3HjMitoy4aAmF1FnFbbjYSmZz6HHXXTWOfqwobOEIaglfzxg==
-  dependencies:
-    "@expo/env" "~2.4.1"
-
 expo-crypto@~15.0.9:
   version "15.0.9"
   resolved "https://registry.npmjs.org/expo-crypto/-/expo-crypto-15.0.9.tgz"
@@ -3852,14 +3836,6 @@ expo-linear-gradient@~15.0.8:
   version "15.0.8"
   resolved "https://registry.npmjs.org/expo-linear-gradient/-/expo-linear-gradient-15.0.8.tgz"
   integrity sha512-V2d8Wjn0VzhPHO+rrSBtcl+Fo+jUUccdlmQ6OoL9/XQB7Qk3d9lYrqKDJyccwDxmQT10JdST3Tmf2K52NLc3kw==
-
-expo-linking@^57.0.2:
-  version "57.0.2"
-  resolved "https://registry.yarnpkg.com/expo-linking/-/expo-linking-57.0.2.tgz#30f04e1fa73ad47a134b16815ddfaa39e58d824f"
-  integrity sha512-A7912NxC4ibDiv7fN2BuEWCrTCmmWdaD+bQa4iNddPDOa3Svs1YDoWdbhJt3mniSaAh9AnUKS2MdFbO4zk8z+Q==
-  dependencies:
-    expo-constants "~57.0.3"
-    invariant "^2.2.4"
 
 expo-linking@~8.0.12:
   version "8.0.12"
